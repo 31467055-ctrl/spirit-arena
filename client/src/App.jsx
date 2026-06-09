@@ -176,7 +176,7 @@ function App() {
         timerRef.current = setTimeout(advance, 100)
       }
     }
-    timerRef.current = setTimeout(advance, 200)
+    timerRef.current = setTimeout(advance, 300)
     return () => clearTimeout(timerRef.current)
   }, [battleId])
 
