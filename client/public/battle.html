@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精灵决斗场 — 战斗引擎 v0.2</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { max-width: 900px; width: 100%; }
+h1 { text-align: center; font-size: 22px; margin-bottom: 2px; color: #58CC02; }
+.subtitle { text-align: center; font-size: 12px; color: #666; margin-bottom: 14px; }
+
+.game-area { display: flex; gap: 16px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+
+canvas {
+  border: 3px solid #333; border-radius: 8px;
+  background: #2a2a3e; image-rendering: pixelated;
+}
+
+/* 侧边栏用卡片式布局 */
+.sidebar { width: 240px; display: flex; flex-direction: column; gap: 10px; }
+
+.panel {
+  background: #262640; border-radius: 12px; padding: 14px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+.panel h3 { font-size: 13px; color: #58CC02; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+/* 宠物信息卡 */
+.pet-card {
+  display: flex; align-items: center; gap: 10px;
+  background: #1e1e38; border-radius: 10px; padding: 8px 12px;
+  margin-bottom: 6px;
+}
+.pet-card .dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.pet-card .info { flex: 1; }
+.pet-card .name { font-size: 13px; font-weight: 600; }
+.pet-card .score { font-size: 15px; font-weight: 700; }
+.pet-card .status-tag {
+  font-size: 10px; padding: 1px 6px; border-radius: 8px;
+  background: rgba(255,255,255,0.1); color: #aaa;
+}
+
+.stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: #aaa; }
+.stat-row .val { color: #e0e0e0; font-weight: 600; }
+
+.info-text { font-size: 11px; color: #666; text-align: center; padding: 4px; }
+
+.controls { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn {
+  padding: 7px 14px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: transform 0.1s; box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+.btn-primary { background: #58CC02; color: #fff; }
+.btn-secondary { background: #4B4B6E; color: #ddd; }
+.btn-danger { background: #FF4B4B; color: #fff; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.log-area {
+  margin-top: 12px; background: #1a1a2e; border-radius: 10px; padding: 8px 12px;
+  max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.5;
+}
+.log-area .log-win { color: #58CC02; }
+.log-area .log-loss { color: #FF4B4B; }
+.log-area .log-action { color: #4ECDC4; }
+.log-area .log-speak { color: #FFD93D; }
+.log-area .log-info { color: #666; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧙 精灵决斗场</h1>
+  <div class="subtitle">战斗引擎 v0.2 — 修复速度 + AI脚本</div>
+
+  <div class="game-area">
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div class="sidebar">
+      <!-- 精灵状态 -->
+      <div class="panel" id="pet0Card">
+        <h3>🔴 小火龙</h3>
+        <div style="font-size:28px; text-align:center;" id="pet0Score">💀 0</div>
+        <div id="pet0Status" class="info-text">状态：正常</div>
+      </div>
+      <div class="panel" id="pet1Card">
+        <h3>🔵 水灵灵</h3>
+        <div style="font-size:28px; text-align:center;" id="pet1Score">💀 0</div>
+        <div id="pet1Status" class="info-text">状态：正常</div>
+      </div>
+
+      <!-- 战况 -->
+      <div class="panel">
+        <h3>⚔️ 战况</h3>
+        <div class="stat-row"><span>帧数</span><span class="val" id="frameCount">0</span></div>
+        <div class="stat-row"><span>用时</span><span class="val" id="timer">0.0s</span></div>
+        <div class="stat-row" id="winnerRow" style="display:none;">
+          <span>🏆 胜者</span><span class="val" id="winnerText" style="color:#FFD93D;"></span>
+        </div>
+      </div>
+
+      <!-- 控制 -->
+      <div class="panel">
+        <div class="controls">
+          <button class="btn btn-primary" id="btnStart">▶ 开始</button>
+          <button class="btn btn-secondary" id="btnPause" disabled>⏸ 暂停</button>
+          <button class="btn btn-danger" id="btnReset">⟳ 重置</button>
+        </div>
+        <div class="info-text" style="margin-top:6px;">⚔️ 先到3杀获胜 · 45秒限时</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log-area" id="logArea">
+    <div class="log-info">🟢 引擎就绪，点击"开始"观战！</div>
+  </div>
+</div>
+
+<script>
+// ===== 配置 =====
+const COLS = 10, ROWS = 10, CELL = 40;
+const TARGET_FPS = 10;             // 目标帧率（10fps，肉眼清晰可见）
+const FRAME_MS = 1000 / TARGET_FPS;
+const MAX_FRAMES = 450;            // 约45秒 @ 10fps
+const KILL_LIMIT = 3;              // 先到3杀获胜（45秒内更现实）
+const STAR_INTERVAL = 25;          // 约2.5秒刷新星尘
+const AI_THINK_INTERVAL = 6;       // 每6帧决策一次（约1.6次/秒）
+const STUCK_LIMIT = 6;             // 连续6帧不动就清路径
+const SHIELD_DURATION = 20;        // 护盾持续20帧（2秒）
+const SHIELD_COOLDOWN = 80;        // 护盾冷却80帧（8秒）
+const BOOST_DURATION = 15;         // 加速持续15帧（1.5秒）
+
+const T = { EMPTY: '.', WALL: 'x', GRASS: 'o' };
+const D = { UP:0, RIGHT:1, DOWN:2, LEFT:3, dx:[0,1,0,-1], dy:[-1,0,1,0] };
+
+let canvas, ctx, engine;
+
+// ===== 地图 =====
+const MAP_TEMPLATE = [
+  ['.','.','x','.','.','.','.','x','.','.'],
+  ['.','.','.','.','o','o','.','.','.','.'],
+  ['x','.','.','x','.','.','x','.','.','x'],
+  ['.','o','.','.','.','.','.','.','o','.'],
+  ['.','.','.','.','.','.','.','.','.','.'],
+  ['.','.','.','.','.','.','.','.','.','.'],
+  ['.','o','.','.','.','.','.','.','o','.'],
+  ['x','.','.','x','.','.','x','.','.','x'],
+  ['.','.','.','.','o','o','.','.','.','.'],
+  ['.','.','x','.','.','.','.','x','.','.'],
+];
+
+function cloneMap() { return MAP_TEMPLATE.map(r => [...r]); }
+
+// ===== BFS 最短路径 =====
+function bfs(map, sx, sy, ex, ey) {
+  if (sx===ex && sy===ey) return [];
+  const q = [[sx, sy]];
+  const visited = Array.from({length:ROWS}, () => Array(COLS).fill(false));
+  const prev = Array.from({length:ROWS}, () => Array(COLS).fill(null));
+  visited[sy][sx] = true;
+  while (q.length > 0) {
+    const [cx, cy] = q.shift();
+    for (let d=0; d<4; d++) {
+      const nx = cx + D.dx[d], ny = cy + D.dy[d];
+      if (nx<0||nx>=COLS||ny<0||ny>=ROWS) continue;
+      if (visited[ny][nx]) continue;
+      if (map[ny][nx] === T.WALL) continue;
+      visited[ny][nx] = true;
+      prev[ny][nx] = [cx, cy, d];
+      if (nx===ex && ny===ey) {
+        // 回溯路径
+        const path = [];
+        let px=nx, py=ny;
+        while (px!==sx || py!==sy) {
+          const [ppx, ppy, dir] = prev[py][px];
+          path.unshift(dir);
+          px = ppx; py = ppy;
+        }
+        return path;
+      }
+      q.push([nx, ny]);
+    }
+  }
+  return []; // 无路可走
+}
+
+// 从当前朝向到目标朝向的最小旋转
+function turnDir(currentDir, targetDir) {
+  const diff = (targetDir - currentDir + 4) % 4;
+  if (diff === 0) return null;
+  if (diff === 1) return 'right';
+  if (diff === 3) return 'left';
+  return 'right'; // 差2格随便转
+}
+
+// ===== 精灵 =====
+class Pet {
+  constructor(id, name, color, x, y, dir) {
+    this.id = id; this.name = name; this.color = color;
+    this.x = x; this.y = y; this.dir = dir;
+    this.stars = 0; this.alive = true;
+    this.kills = 0;                // 击杀数
+    this.bullet = null;
+    // buff
+    this.shieldF = 0;
+    this.shieldCooldown = 0;       // 护盾冷却计时
+    this.cloakF = 0; this.boostF = 0;
+    this.fireLock = 0;
+    // AI
+    this.aiCooldown = 0;
+    this.aiPath = [];
+    this.stuckCount = 0; // 连续卡住计数器
+    this.lastPos = {x:-1, y:-1};
+    this.lastAction = '';
+  }
+  get shielded() { return this.shieldF > 0; }
+  get cloaked() { return this.cloakF > 0; }
+  get boosted() { return this.boostF > 0; }
+}
+
+// ===== 子弹 =====
+class Bullet {
+  constructor(owner, x, y, dir) {
+    this.owner = owner; this.x = x; this.y = y; this.dir = dir;
+    this.alive = true;
+  }
+}
+
+// ===== 主引擎 =====
+class Engine {
+  constructor() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    this.pets = [];
+    this.bullets = [];
+    this.star = null;
+    this.frame = 0;
+    this.running = false;
+    this.paused = false;
+    this.over = false;
+    this.starTimer = 0;
+    this.startTime = 0;
+    this.timerId = null;
+
+    this.btnSt = byId('btnStart');
+    this.btnPa = byId('btnPause');
+    this.btnRe = byId('btnReset');
+    this.logEl = byId('logArea');
+    this.frameCount = byId('frameCount');
+    this.timer = byId('timer');
+    this.winnerRow = byId('winnerRow');
+    this.winnerText = byId('winnerText');
+
+    this.btnSt.onclick = () => this.start();
+    this.btnPa.onclick = () => this.togglePause();
+    this.btnRe.onclick = () => this.reset();
+
+    this.reset();
+    this.draw();
+  }
+
+  getRandomPosition(exclude) {
+    const positions = [];
+    for (let y=0; y<ROWS; y++) for (let x=0; x<COLS; x++) {
+      if (this.map[y][x] === T.WALL) continue;
+      if (exclude && exclude.some(e => e.x===x && e.y===y)) continue;
+      // 不要离对方太近（至少3格曼哈顿距离）
+      if (exclude && exclude.some(e => Math.abs(e.x-x)+Math.abs(e.y-y) < 3)) continue;
+      positions.push({x, y});
+    }
+    if (positions.length === 0) return {x:1, y:1};
+    return positions[Math.floor(Math.random() * positions.length)];
+  }
+
+  reset() {
+    // 停掉正在运行的计时器
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+    }
+    this.running = false; this.paused = false; this.over = false;
+    this.frame = 0; this.bullets = []; this.starTimer = 0;
+    this.star = null;
+    this.map = cloneMap();
+    const p0pos = this.getRandomPosition([]);
+    const p1pos = this.getRandomPosition([p0pos]);
+    this.pets = [
+      new Pet(0, '小火龙', '#FF6B6B', p0pos.x, p0pos.y, Math.floor(Math.random()*4)),
+      new Pet(1, '水灵灵', '#4ECDC4', p1pos.x, p1pos.y, Math.floor(Math.random()*4)),
+    ];
+    this.spawnStar();
+    this.btnSt.disabled = false;
+    this.btnPa.disabled = true; this.btnPa.textContent = '⏸ 暂停';
+    this.winnerRow.style.display = 'none';
+    this.logEl.innerHTML = '<div class="log-info">🟢 重置完成，点击"开始"</div>';
+    this.draw(); this.updateUI();
+  }
+
+  spawnStar() {
+    for (let attempt=0; attempt<100; attempt++) {
+      const x = Math.floor(Math.random()*COLS), y = Math.floor(Math.random()*ROWS);
+      if (this.map[y][x] === T.WALL) continue;
+      if (this.pets.some(p => p.x===x && p.y===y)) continue;
+      this.star = {x, y}; return;
+    }
+    // 格子满了就强制放空地
+    for (let y=0; y<ROWS; y++) for (let x=0; x<COLS; x++) {
+      if (this.map[y][x] !== T.WALL && !this.pets.some(p=>p.x===x&&p.y===y)) {
+        this.star = {x, y}; return;
+      }
+    }
+  }
+
+  start() {
+    if (this.running) return;
+    this.reset();
+    this.running = true; this.paused = false;
+    this.startTime = performance.now();
+    this.btnSt.disabled = true; this.btnPa.disabled = false;
+    this.log('info', '🔔 战斗开始！');
+    // 用setInterval，每 FRAME_MS 毫秒执行一次tick
+    this.timerId = setInterval(() => this.tickWrapper(), FRAME_MS);
+  }
+
+  togglePause() {
+    this.paused = !this.paused;
+    this.btnPa.textContent = this.paused ? '▶ 继续' : '⏸ 暂停';
+  }
+
+  // tick包装器：渲染+逻辑，不依赖rAF时间参数
+  tickWrapper() {
+    if (!this.running || this.paused || this.over) return;
+
+    this.frame++;
+    this.tick();
+
+    this.draw();
+    this.updateUI();
+    const elapsed = (performance.now() - this.startTime) / 1000;
+    this.timer.textContent = elapsed.toFixed(1) + 's';
+  }
+
+  tick() {
+    if (this.over) return;
+
+    // 1. buff计时
+    for (const p of this.pets) {
+      if (!p.alive) continue;
+      if (p.shieldF > 0) p.shieldF--;
+      if (p.shieldCooldown > 0) p.shieldCooldown--;
+      if (p.cloakF > 0) p.cloakF--;
+      if (p.boostF > 0) p.boostF--;
+      if (p.fireLock > 0) p.fireLock--;
+    }
+
+    // 2. AI决策（每AI_THINK_INTERVAL帧一次）
+    for (const p of this.pets) {
+      if (!p.alive) continue;
+      p.aiCooldown--;
+      if (p.aiCooldown <= 0) {
+        p.aiCooldown = AI_THINK_INTERVAL;
+        this.aiThink(p);
+      }
+    }
+
+    // 3. 执行一个命令
+    for (const p of this.pets) {
+      if (!p.alive) continue;
+      // 卡住检测：如果位置没变且没移动命令就计数
+      if (p.x === p.lastPos.x && p.y === p.lastPos.y) {
+        p.stuckCount++;
+      } else {
+        p.stuckCount = 0;
+        p.lastPos = {x: p.x, y: p.y};
+      }
+      // 卡太久就清空路径，让AI下次决策新路线
+      if (p.stuckCount > STUCK_LIMIT) {
+        p.aiPath = [];
+        p.stuckCount = 0;
+      }
+
+      if (p.aiPath.length > 0) {
+        const cmd = p.aiPath[0]; // peek不shift
+        if (cmd.type === 'go') {
+          const moved = this.tryMove(p);
+          if (moved) p.aiPath.shift(); // 移动成功才消费
+          // 没移动成功，保留命令下一帧再试
+        } else {
+          p.aiPath.shift(); // 非移动命令直接消费
+          if (cmd.type === 'turn') {
+            p.dir = cmd.dir;
+          } else if (cmd.type === 'fire') {
+            const ok = this.tryFire(p);
+            if (!ok) this.log('action', `❌ ${p.name} 开火失败！(方向:${p.dir} 位置:${p.x},${p.y})`);
+          } else if (cmd.type === 'shield') {
+            if (p.shieldCooldown <= 0) {
+              p.shieldF = SHIELD_DURATION;
+              p.shieldCooldown = SHIELD_COOLDOWN;
+              this.log('action', `🛡 ${p.name} 开启守护之盾！(持续2s)`);
+            }
+          } else if (cmd.type === 'cloak') {
+            p.cloakF = 8;
+            this.log('action', `👻 ${p.name} 进入隐身！`);
+          } else if (cmd.type === 'boost') {
+            p.boostF = BOOST_DURATION;
+            this.log('action', `💨 ${p.name} 加速！(持续1.5s)`);
+          } else if (cmd.type === 'speak') {
+            this.log('speak', `💬 ${p.name}: "${cmd.text}"`);
+          }
+        }
+      }
+    }
+
+    // 4. 子弹移动
+    for (const b of this.bullets) {
+      if (!b.alive) continue;
+      const nx = b.x + D.dx[b.dir], ny = b.y + D.dy[b.dir];
+      if (nx<0||nx>=COLS||ny<0||ny>=ROWS || this.map[ny][nx]===T.WALL) {
+        b.alive = false;
+        const owner = this.pets.find(p=>p.id===b.owner);
+        if (owner) owner.bullet = null;
+      } else {
+        b.x = nx; b.y = ny;
+        // 命中检测
+        for (const p of this.pets) {
+          if (p.id === b.owner || !p.alive) continue;
+          if (p.x === nx && p.y === ny) {
+            if (p.shielded) {
+              b.alive = false; p.shieldF = 0;
+              this.log('action', `🛡 ${p.name} 护盾挡住了攻击！`);
+            } else {
+              // 击杀制：击倒对方，计数+1，原地复活
+              b.alive = false;
+              const attacker = this.pets.find(o=>o.id===b.owner);
+              if (attacker) {
+                attacker.kills++;
+                this.log('win', `💀 ${attacker.name} 击倒了 ${p.name}！(${attacker.kills}/${KILL_LIMIT})`);
+                // 检查是否达到击杀上限
+                if (attacker.kills >= KILL_LIMIT) {
+                  this.winner = attacker;
+                  this.end();
+                  break;
+                }
+              }
+              // 被击倒者随机复活
+              const pos = this.getRandomPosition([]);
+              p.x = pos.x; p.y = pos.y;
+              p.dir = Math.floor(Math.random()*4);
+              p.bullet = null;
+              p.shieldF = 0; p.shieldCooldown = 0;
+              p.cloakF = 0; p.boostF = 0;
+              p.aiPath = [];
+              p.stuckCount = 0;
+              this.log('action', `✨ ${p.name} 在 (${pos.x},${pos.y}) 复活！`);
+            }
+            const owner = this.pets.find(o=>o.id===b.owner);
+            if (owner) owner.bullet = null;
+            break;
+          }
+        }
+      }
+    }
+    this.bullets = this.bullets.filter(b => b.alive);
+
+    // 5. 星尘
+    if (!this.star) {
+      this.starTimer++;
+      if (this.starTimer >= STAR_INTERVAL) { this.spawnStar(); this.starTimer = 0; }
+    } else {
+      for (const p of this.pets) {
+        if (!p.alive) continue;
+        if (p.x === this.star.x && p.y === this.star.y) {
+          p.stars++;
+          this.log('action', `⭐ ${p.name} 抢到星尘！`);
+          this.star = null; this.starTimer = 0;
+          break;
+        }
+      }
+    }
+
+    // 6. 胜负
+    if (this.frame >= MAX_FRAMES) this.end();
+  }
+
+  // AI决策：根据当前状态规划接下来的动作
+  aiThink(p) {
+    const enemy = this.pets[1-p.id];
+    if (!enemy.alive) return;
+    
+    const m = this.map;
+    const visible = (eid) => {
+      const ep = this.pets[eid];
+      if (!ep.alive) return false;
+      if (ep.cloakF > 0) return false;
+      if (m[ep.y][ep.x] === T.GRASS) return false;
+      return true;
+    };
+    const enemyVisible = visible(enemy.id);
+    const commands = [];
+    const push = (type, data) => commands.push({type, ...data});
+
+    // 确定目标：有星尘优先抢星，没星尘再追敌
+    let target = null;
+    if (this.star) {
+      target = {x: this.star.x, y: this.star.y};
+    } else if (enemyVisible) {
+      target = {x: enemy.x, y: enemy.y};
+    }
+
+    if (target) {
+      const path = bfs(m, p.x, p.y, target.x, target.y);
+      if (path.length > 0) {
+        let simDir = p.dir;
+        // 检测第一步是否被对方挡住
+        const stepX = p.x + D.dx[path[0]];
+        const stepY = p.y + D.dy[path[0]];
+        const blocked = (stepX === enemy.x && stepY === enemy.y);
+
+        if (blocked) {
+          // 被堵住：先往侧面走再绕回来
+          let sideDir = -1;
+          for (const d of [1, 3]) {
+            const sd = (path[0] + d) % 4;
+            const sx = p.x + D.dx[sd], sy = p.y + D.dy[sd];
+            if (sx>=0 && sx<COLS && sy>=0 && sy<ROWS && m[sy][sx] !== T.WALL &&
+                !this.pets.some(o=>o.id!==p.id && o.alive && o.x===sx && o.y===sy)) {
+              sideDir = sd; break;
+            }
+          }
+          if (sideDir >= 0) {
+            // 转向侧面走
+            let turn = turnDir(simDir, sideDir);
+            if (turn) { const nd = (simDir + (turn==='right'?1:3)) % 4; push('turn', {dir: nd}); simDir = nd; }
+            push('go');
+            // 然后再转向目标
+            if (path.length > 1) {
+              turn = turnDir(simDir, path[1]);
+              if (turn) { const nd = (simDir + (turn==='right'?1:3)) % 4; push('turn', {dir: nd}); simDir = nd; }
+              push('go');
+            }
+          } else {
+            // 没地方绕，硬着头皮
+            push('go');
+          }
+        } else {
+          // 正常情况：走最多3步
+          const steps = Math.min(path.length, 3);
+          for (let i = 0; i < steps; i++) {
+            const dir = path[i];
+            const turn = turnDir(simDir, dir);
+            if (turn) { const nd = (simDir + (turn==='right'?1:3)) % 4; push('turn', {dir: nd}); simDir = nd; }
+            push('go');
+          }
+        }
+
+        // 开火条件：只要敌人在射程内，优先射一枪再走
+        if (enemyVisible) {
+          const dist = Math.abs(p.x-enemy.x) + Math.abs(p.y-enemy.y);
+          if (dist <= 6 && dist > 0 && !p.bullet && p.fireLock<=0) {
+            const dx = enemy.x - p.x, dy = enemy.y - p.y;
+            let aimDir = Math.abs(dx) >= Math.abs(dy)
+              ? (dx > 0 ? D.RIGHT : D.LEFT)
+              : (dy > 0 ? D.DOWN : D.UP);
+            const turn = turnDir(p.dir, aimDir);
+            if (turn) {
+              // 需要转向→先转再射
+              commands.unshift({type:'fire'});
+              commands.unshift({type:'turn', dir: (p.dir + (turn==='right'?1:3)) % 4});
+            } else {
+              // 已经对着敌人→直接射
+              commands.unshift({type:'fire'});
+            }
+          }
+          if (dist < 5 && p.shieldCooldown <= 0 && p.shieldF <= 0) {
+            commands.push({type:'shield'});
+          }
+        }
+      } else {
+        // 无路可走，随机走
+        for (let i=0; i<3; i++) {
+          const rd = Math.floor(Math.random()*4);
+          const turn = turnDir(p.dir, rd);
+          if (turn) push('turn', {dir: (p.dir + (turn==='right'?1:3)) % 4});
+          push('go');
+        }
+      }
+    } else {
+      // 闲逛
+      const wanderDir = Math.floor(Math.random()*4);
+      const turn0 = turnDir(p.dir, wanderDir);
+      if (turn0) push('turn', {dir: (p.dir + (turn0==='right'?1:3)) % 4});
+      for (let i=0; i<3; i++) push('go');
+      if (p.id===1 && Math.random()<0.15) push('speak', {text:'找星星~'});
+    }
+
+    p.aiPath = commands;
+  }
+
+  tryMove(p) {
+    const speed = p.boosted ? 2 : 1;
+    let moved = false;
+    for (let i=0; i<speed; i++) {
+      const nx = p.x + D.dx[p.dir], ny = p.y + D.dy[p.dir];
+      if (nx<0||nx>=COLS||ny<0||ny>=ROWS) break;
+      if (this.map[ny][nx] === T.WALL) break;
+      if (this.pets.some(o=>o.id!==p.id && o.alive && o.x===nx && o.y===ny)) break;
+      p.x = nx; p.y = ny; moved = true;
+    }
+    return moved;
+  }
+
+  tryFire(p) {
+    if (p.bullet || p.fireLock > 0) return false;
+    const bx = p.x + D.dx[p.dir], by = p.y + D.dy[p.dir];
+    if (bx<0||bx>=COLS||by<0||by>=ROWS) return false;
+    if (this.map[by][bx] === T.WALL) return false;
+    const b = new Bullet(p.id, bx, by, p.dir);
+    this.bullets.push(b);
+    p.bullet = b;
+    this.log('action', `🔥 ${p.name} 发射了魔法弹！`);
+    return true;
+  }
+
+  end() {
+    this.over = true; this.running = false;
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+    }
+    this.btnSt.disabled = false; this.btnPa.disabled = true;
+    // 清空所有buff和待执行命令，让精灵停止
+    for (const p of this.pets) {
+      p.aiPath = [];
+      p.shieldF = 0; p.cloakF = 0; p.boostF = 0; p.fireLock = 0;
+    }
+    this.bullets = [];
+    const p0 = this.pets[0], p1 = this.pets[1];
+    const w = this.winner || (p0.kills > p1.kills ? p0 : p1.kills > p0.kills ? p1 : null);
+    const msg = w ? `🏆 ${w.name} 获胜！(${p0.kills}杀 vs ${p1.kills}杀)` : `🤝 平局！(${p0.kills}杀 vs ${p1.kills}杀)`;
+    this.log('win', `🏁 ${msg}`);
+    this.winnerRow.style.display = 'flex';
+    this.winnerText.textContent = w ? `${w.name} 获胜！(${p0.kills}杀 vs ${p1.kills}杀)` : `平局(${p0.kills}杀 vs ${p1.kills}杀)`;
+  }
+
+  // ===== 渲染 =====
+  draw() {
+    ctx.clearRect(0, 0, 400, 400);
+    // 地图
+    for (let y=0; y<ROWS; y++) for (let x=0; x<COLS; x++) {
+      const px = x*CELL, py = y*CELL, t = this.map[y][x];
+      if (t === T.WALL) {
+        ctx.fillStyle = '#5c4033'; ctx.fillRect(px, py, CELL, CELL);
+        ctx.fillStyle = '#7a5a44'; ctx.fillRect(px+2, py+2, CELL-4, CELL-4);
+        ctx.fillStyle = '#4a3020';
+        ctx.fillRect(px+6, py+6, 4, 4); ctx.fillRect(px+28, py+28, 4, 4);
+      } else if (t === T.GRASS) {
+        ctx.fillStyle = '#2d5a27'; ctx.fillRect(px, py, CELL, CELL);
+        ctx.fillStyle = '#3a7a33';
+        ctx.fillRect(px+6, py+6, 6, 6); ctx.fillRect(px+22, py+22, 5, 5);
+        ctx.fillRect(px+14, py+14, 4, 4);
+      } else {
+        ctx.fillStyle = (x+y)%2===0 ? '#3a3a5c' : '#32325a';
+        ctx.fillRect(px, py, CELL, CELL);
+      }
+    }
+    // 网格
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+    for (let i=0; i<=COLS; i++) {
+      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,ROWS*CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(COLS*CELL,i*CELL); ctx.stroke();
+    }
+    // 星尘
+    if (this.star) {
+      const s = this.star, pulse = Math.sin(this.frame*0.08)*3;
+      ctx.font = '22px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('⭐', s.x*CELL+20, s.y*CELL+20 + pulse);
+    }
+    // 子弹
+    for (const b of this.bullets) {
+      if (!b.alive) continue;
+      ctx.beginPath(); ctx.arc(b.x*CELL+20, b.y*CELL+20, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#FFD93D'; ctx.fill();
+      ctx.shadowColor = '#FFD93D'; ctx.shadowBlur = 12; ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    // 精灵
+    for (const p of this.pets) {
+      if (!p.alive) continue;
+      const cx = p.x*CELL+20, cy = p.y*CELL+20;
+      ctx.save();
+      ctx.globalAlpha = p.cloaked ? 0.35 : 1;
+      // 护盾光环
+      if (p.shielded) {
+        ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2);
+        ctx.strokeStyle = '#58CC02'; ctx.lineWidth = 3;
+        ctx.shadowColor = '#58CC02'; ctx.shadowBlur = 18; ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      // 身体
+      ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2);
+      ctx.fillStyle = p.color; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      // 方向三角
+      const angle = p.dir * Math.PI/2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle)*18, cy + Math.sin(angle)*18);
+      ctx.lineTo(cx + Math.cos(angle+2.5)*11, cy + Math.sin(angle+2.5)*11);
+      ctx.lineTo(cx + Math.cos(angle-2.5)*11, cy + Math.sin(angle-2.5)*11);
+      ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
+      // 加速拖尾
+      if (p.boosted) {
+        for (let i=0; i<2; i++) {
+          ctx.beginPath();
+          ctx.arc(cx - Math.cos(angle)*16 + (Math.random()-0.5)*6,
+                  cy - Math.sin(angle)*16 + (Math.random()-0.5)*6, 2+Math.random()*2, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(255,255,255,${0.2+Math.random()*0.3})`; ctx.fill();
+        }
+      }
+      ctx.restore();
+      // 名字
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(p.name, cx, cy-26);
+      // buff标签
+      let tags = [];
+      if (p.shielded) tags.push('🛡');
+      if (p.cloaked) tags.push('👻');
+      if (p.boosted) tags.push('💨');
+      if (tags.length > 0) {
+        ctx.font = '10px sans-serif'; ctx.fillStyle = '#888';
+        ctx.fillText(tags.join(' '), cx, cy+26);
+      }
+    }
+  }
+
+  updateUI() {
+    for (let i=0; i<2; i++) {
+      const p = this.pets[i];
+      byId(`pet${i}Score`).textContent = `💀 ${p.kills}`;
+      let st = [];
+      if (p.shielded) st.push('🛡护盾');
+      if (p.cloaked) st.push('👻隐身');
+      if (p.boosted) st.push('💨加速');
+      byId(`pet${i}Status`).textContent = '状态：' + (st.length ? st.join(' ') : '正常');
+    }
+    this.frameCount.textContent = this.frame;
+  }
+
+  log(type, msg) {
+    const cls = type==='win'?'log-win':type==='action'?'log-action':type==='speak'?'log-speak':'log-info';
+    const div = document.createElement('div'); div.className = cls;
+    div.textContent = `[${this.frame}] ${msg}`;
+    this.logEl.appendChild(div);
+    this.logEl.scrollTop = this.logEl.scrollHeight;
+    while (this.logEl.children.length > 50) this.logEl.removeChild(this.logEl.firstChild);
+  }
+}
+
+function byId(id) { return document.getElementById(id); }
+
+window.onload = () => { engine = new Engine(); };
+</script>
+</body>
+</html>
