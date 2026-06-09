@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* 多邻国风格色板 */
+:root {
+  --color-green: #58CC02;
+  --color-orange: #FF9600;
+  --color-purple: #CE82FF;
+  --color-bg: #FFFFFF;
+  --color-card: #F7F7F7;
+  --color-text: #4B4B4B;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f0f4f8;
+  color: var(--color-text);
+}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精灵决斗场 — 项目可行性分布计划</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter', system-ui, sans-serif; background:#f0f4f8; color:#1a1a2e; padding:40px 20px; }
+.container { max-width:1100px; margin:0 auto; }
+h1 { font-size:32px; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:12px; }
+h1 span { background:#58CC02; color:#fff; font-size:14px; padding:4px 12px; border-radius:20px; font-weight:600; }
+.subtitle { color:#666; font-size:14px; margin-bottom:32px; }
+
+/* Phase cards */
+.phase-grid { display:flex; flex-direction:column; gap:16px; margin-bottom:40px; }
+.phase-card { background:#fff; border-radius:16px; padding:20px 24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-left:5px solid #ccc; position:relative; }
+.phase-card.p0 { border-left-color:#58CC02; }
+.phase-card.p1 { border-left-color:#1CB0F6; }
+.phase-card.p2 { border-left-color:#CE82FF; }
+.phase-card.p3 { border-left-color:#FF9600; }
+.phase-card.p4 { border-left-color:#FF4B4B; }
+.phase-card.p5 { border-left-color:#4B4B4B; }
+
+.phase-header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.phase-badge { font-weight:700; font-size:13px; padding:3px 10px; border-radius:12px; color:#fff; }
+.p0 .phase-badge { background:#58CC02; }
+.p1 .phase-badge { background:#1CB0F6; }
+.p2 .phase-badge { background:#CE82FF; }
+.p3 .phase-badge { background:#FF9600; }
+.p4 .phase-badge { background:#FF4B4B; }
+.p5 .phase-badge { background:#4B4B4B; }
+
+.phase-title { font-size:18px; font-weight:700; }
+.phase-week { font-size:13px; color:#999; margin-left:auto; }
+.phase-desc { font-size:14px; color:#555; margin-bottom:10px; }
+.task-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
+.task-list li { font-size:13px; color:#333; padding:3px 0; position:relative; padding-left:16px; }
+.task-list li::before { content:"▸"; position:absolute; left:0; color:#999; }
+.task-list li.done::before { content:"✅"; color:#58CC02; }
+.task-list li.done { color:#999; text-decoration:line-through; }
+
+/* Gantt */
+.gantt-section { background:#fff; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:40px; }
+.gantt-section h2 { font-size:18px; font-weight:700; margin-bottom:16px; }
+.gantt { width:100%; border-collapse:collapse; }
+.gantt th { font-weight:600; font-size:11px; color:#999; text-align:center; padding:4px 0; border-bottom:1px solid #eee; }
+.gantt td { padding:6px 0; font-size:13px; vertical-align:middle; }
+.gantt .label { width:130px; font-weight:600; padding-right:12px; }
+.gantt .bar-cell { position:relative; min-width:60px; }
+.gantt .bar { height:22px; border-radius:6px; position:relative; min-width:4px; }
+.gantt .bar span { position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:11px; font-weight:600; color:#fff; white-space:nowrap; }
+.bar-p0 { background:#58CC02; }
+.bar-p1 { background:#1CB0F6; }
+.bar-p2a { background:#CE82FF; }
+.bar-p2b { background:#CE82FF; opacity:0.6; }
+.bar-p3 { background:#FF9600; }
+.bar-p4 { background:#FF4B4B; }
+.bar-p5 { background:#4B4B4B; }
+
+/* Team */
+.team-section { background:#fff; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:40px; }
+.team-section h2 { font-size:18px; font-weight:700; margin-bottom:16px; }
+.team-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+.team-card { background:#f7f9fc; border-radius:12px; padding:14px 16px; }
+.team-card .role { font-weight:700; font-size:14px; }
+.team-card .who { font-size:12px; color:#666; margin-top:2px; }
+.team-card .desc { font-size:12px; color:#888; margin-top:4px; }
+
+/* Risk */
+.risk-section { background:#fff; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.risk-section h2 { font-size:18px; font-weight:700; margin-bottom:16px; }
+.risk-table { width:100%; border-collapse:collapse; }
+.risk-table th { text-align:left; font-size:11px; font-weight:600; color:#999; padding:6px 12px; border-bottom:1px solid #eee; }
+.risk-table td { font-size:13px; padding:8px 12px; border-bottom:1px solid #f5f5f5; }
+.risk-table .risk-label { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:8px; }
+.risk-low { background:#e8f5e9; color:#2e7d32; }
+.risk-mid { background:#fff3e0; color:#e65100; }
+.risk-high { background:#ffebee; color:#c62828; }
+
+/* Collaboration */
+.collab-box { background:#F0FFF4; border:2px solid #58CC02; border-radius:16px; padding:20px 24px; margin-bottom:24px; }
+.collab-box h3 { font-size:16px; font-weight:700; color:#2e7d32; margin-bottom:8px; }
+.collab-box ul { list-style:none; padding:0; }
+.collab-box li { font-size:13px; color:#333; padding:4px 0; padding-left:20px; position:relative; }
+.collab-box li::before { content:"•"; color:#58CC02; font-weight:700; position:absolute; left:4px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+  <div>
+    <h1>🧙 精灵决斗场 <span>可行性分布计划 v1.0</span></h1>
+    <div class="subtitle">AI Agent 精灵对战平台 · 2026.6.9 发布 · 单人+AI辅助开发</div>
+  </div>
+  <div style="text-align:right; font-size:13px; color:#666;">
+    <div style="font-weight:700; font-size:24px; color:#58CC02;">6-8周</div>
+    <div>预估总工期</div>
+  </div>
+</div>
+
+<!-- 协作模式 -->
+<div class="collab-box">
+  <h3>🤝 轻量级协作模式（当前）</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 24px;">
+    <div>
+      <div style="font-weight:600; color:#333; margin-bottom:4px;">👤 你（Reil · 游戏UI设计师）</div>
+      <ul>
+        <li>出精灵角色设计（画/AI生图+PS修）</li>
+        <li>出UI效果图/风格参考（PS截图即可）</li>
+        <li>验收前端UI效果，告诉我"这里不对"</li>
+        <li>决定项目方向和优先级</li>
+      </ul>
+    </div>
+    <div>
+      <div style="font-weight:600; color:#333; margin-bottom:4px;">🤖 MOSS（AI Agent · 全栈工程师）</div>
+      <ul>
+        <li>读你的设计图→提取视觉信息→写代码</li>
+        <li>写战斗引擎、Agent API、前端页面、PixiJS渲染</li>
+        <li>部署预览链接→你验收→调整</li>
+        <li>需要时搭建Agent团队扩展产能</li>
+      </ul>
+      <div style="margin-top:6px; font-size:12px; color:#888;">你不需要切图，不需要标尺寸。PSD或截图丢过来就行。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase Cards -->
+<h2 style="font-size:18px; font-weight:700; margin-bottom:12px;">📋 分阶段计划</h2>
+<div class="phase-grid">
+
+  <div class="phase-card p0">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 0</span>
+      <span class="phase-title">战斗引擎原型（本地跑通）</span>
+      <span class="phase-week">第0-1天 · 现在→明天</span>
+    </div>
+    <div class="phase-desc">单HTML文件，浏览器直接打开。两个硬编码AI脚本在网格上互殴，带回放。</div>
+    <ul class="task-list">
+      <li>网格地图渲染（10×10）</li>
+      <li>角色移动+转身+射击</li>
+      <li>碰撞检测（子弹/墙壁/角色）</li>
+      <li>星尘刷新+收集计分</li>
+      <li>回放录制+播放</li>
+      <li>两个脚本对战演示</li>
+    </ul>
+  </div>
+
+  <div class="phase-card p1">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 1</span>
+      <span class="phase-title">项目骨架+后端服务</span>
+      <span class="phase-week">第2-5天</span>
+    </div>
+    <div class="phase-desc">从单HTML升级为全栈项目：React+Vite前端 + Node.js+Express后端 + SQLite数据库。</div>
+    <ul class="task-list">
+      <li>React+Vite项目初始化</li>
+      <li>PixiJS游戏组件集成</li>
+      <li>Node.js+Express后端搭建</li>
+      <li>SQLite数据库设计</li>
+      <li>战斗引擎迁移到服务端</li>
+      <li>回放录制存储</li>
+    </ul>
+  </div>
+
+  <div class="phase-card p2">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 2</span>
+      <span class="phase-title">Agent API + 用户系统</span>
+      <span class="phase-week">第6-12天</span>
+    </div>
+    <div class="phase-desc">玩家注册、创建精灵、用AI Agent调教脚本、模拟对战、正式挑战、排行榜。</div>
+    <ul class="task-list">
+      <li>用户注册/登录</li>
+      <li>精灵创建（选类型+默认脚本）</li>
+      <li>GET /api/agent/pet</li>
+      <li>POST /api/agent/pet/code</li>
+      <li>POST /api/agent/pet/simulate</li>
+      <li>POST /api/agent/pet/challenge</li>
+      <li>GET /api/agent/leaderboard</li>
+      <li>GET /api/agent/opponents</li>
+      <li>脚本沙箱（isolated-vm）</li>
+      <li>Elo积分+段位系统</li>
+    </ul>
+  </div>
+
+  <div class="phase-card p3">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 3</span>
+      <span class="phase-title">前端UI + 视觉换皮</span>
+      <span class="phase-week">第13-20天 · 与你并行</span>
+    </div>
+    <div class="phase-desc">等你出设计图后，我实现多邻国风格UI + PixiJS精灵渲染 + 对战画面 + 回放播放器。</div>
+    <ul class="task-list">
+      <li>多邻国风格UI（色板/卡片/按钮/圆环）</li>
+      <li>精灵选择页</li>
+      <li>精灵详情/控制台</li>
+      <li>对战画面（PixiJS精灵动画）</li>
+      <li>技能特效（护盾/传送/隐身等）</li>
+      <li>回放播放器</li>
+      <li>排行榜 UI</li>
+      <li>皮肤系统</li>
+      <li>台词气泡</li>
+    </ul>
+  </div>
+
+  <div class="phase-card p4">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 4</span>
+      <span class="phase-title">亲子功能 + 安全系统</span>
+      <span class="phase-week">第21-25天</span>
+    </div>
+    <div class="phase-desc">家长控制台、内容过滤、简单模式、时长管控。</div>
+    <ul class="task-list">
+      <li>家长控制台（绑定/时长/模型限制）</li>
+      <li>对话记录审查</li>
+      <li>内容安全过滤</li>
+      <li>简单模式（预设策略模板）</li>
+    </ul>
+  </div>
+
+  <div class="phase-card p5">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 5</span>
+      <span class="phase-title">社区 + 部署上线</span>
+      <span class="phase-week">第26-30天</span>
+    </div>
+    <div class="phase-desc">分享回放、精彩对局推荐、成就徽章、Vercel+Railway部署上线。</div>
+    <ul class="task-list">
+      <li>分享回放链接（生成卡片）</li>
+      <li>精彩对局精选</li>
+      <li>成就/徽章系统</li>
+      <li>Vercel前端部署</li>
+      <li>Railway后端部署</li>
+      <li>域名+SSL配置</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Gantt -->
+<div class="gantt-section">
+  <h2>📊 甘特图（时间轴）</h2>
+  <table class="gantt">
+    <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>W5</th><th>W6</th></tr>
+    <tr>
+      <td class="label">Phase 0 · 引擎原型</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p0" style="width:10%;"><span>1天</span></div></td>
+    </tr>
+    <tr>
+      <td class="label">Phase 1 · 全栈骨架</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p1" style="width:17%;"><span>4天</span></div></td>
+    </tr>
+    <tr>
+      <td class="label">Phase 2 · Agent API</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p2a" style="width:40%; margin-left:17%;"><span>7天</span></div></td>
+    </tr>
+    <tr>
+      <td class="label">Phase 3 · 前端UI</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p2b" style="width:45%; margin-left:25%;"><span>8天（等你的设计图）</span></div></td>
+    </tr>
+    <tr>
+      <td class="label">Phase 4 · 亲子+安全</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p3" style="width:20%; margin-left:70%;"><span>5天</span></div></td>
+    </tr>
+    <tr>
+      <td class="label">Phase 5 · 社区+上线</td>
+      <td class="bar-cell" colspan="6"><div class="bar bar-p4" style="width:15%; margin-left:85%;"><span>5天</span></div></td>
+    </tr>
+  </table>
+  <div style="margin-top:12px; font-size:12px; color:#999;">
+    <span style="display:inline-block; width:12px; height:12px; background:#CE82FF; border-radius:2px; margin-right:4px; vertical-align:middle;"></span> Phase 3（前端UI）与你并行，等你出设计图后启动
+  </div>
+</div>
+
+<!-- Team Evolution -->
+<div class="team-section">
+  <h2>👥 Agent团队演进计划</h2>
+  <div style="font-size:13px; color:#666; margin-bottom:12px;">随着项目推进逐步扩展Agent团队，不一开始就搭大架子</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+    <div style="background:#e8f5e9; border-radius:12px; padding:14px 16px;">
+      <div style="font-weight:700; font-size:13px; color:#2e7d32;">Phase 0-1 · 单人模式</div>
+      <div style="font-size:12px; color:#555; margin-top:4px;">MOSS 自己干，快速验证核心能跑</div>
+    </div>
+    <div style="background:#fff3e0; border-radius:12px; padding:14px 16px;">
+      <div style="font-weight:700; font-size:13px; color:#e65100;">Phase 2 · 双人模式</div>
+      <div style="font-size:12px; color:#555; margin-top:4px;">MOSS + 后端Agent · 代码量大需分工</div>
+    </div>
+    <div style="background:#ffebee; border-radius:12px; padding:14px 16px;">
+      <div style="font-weight:700; font-size:13px; color:#c62828;">Phase 3+ · 全团队</div>
+      <div style="font-size:12px; color:#555; margin-top:4px;">前端/后端/游戏/测试/安全5个Agent各司其职</div>
+    </div>
+  </div>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="role">🎨 技术负责人</div>
+      <div class="who">MOSS → 全程</div>
+      <div class="desc">架构决策、分工协调、验收质量</div>
+    </div>
+    <div class="team-card" style="background:#fff3e0;">
+      <div class="role">👤 UI/美术设计师</div>
+      <div class="who">你 → Phase 3 激活</div>
+      <div class="desc">精灵设计、效果图、风格方向</div>
+    </div>
+    <div class="team-card" style="opacity:0.5;">
+      <div class="role">⚙️ 后端Agent</div>
+      <div class="who">Phase 2 激活</div>
+      <div class="desc">API、数据库、沙箱安全</div>
+    </div>
+    <div class="team-card" style="opacity:0.5;">
+      <div class="role">🎮 前端Agent</div>
+      <div class="who">Phase 3 激活</div>
+      <div class="desc">React组件、UI实现</div>
+    </div>
+    <div class="team-card" style="opacity:0.5;">
+      <div class="role">🐉 游戏Agent</div>
+      <div class="who">Phase 3 激活</div>
+      <div class="desc">PixiJS渲染、技能特效、动画</div>
+    </div>
+    <div class="team-card" style="opacity:0.5;">
+      <div class="role">🧪 测试Agent</div>
+      <div class="who">Phase 2 激活</div>
+      <div class="desc">单元测试、集成测试、API测试</div>
+    </div>
+    <div class="team-card" style="opacity:0.5;">
+      <div class="role">🔒 安全审查Agent</div>
+      <div class="who">Phase 4 激活</div>
+      <div class="desc">沙箱审计、内容过滤检查、隐私合规</div>
+    </div>
+  </div>
+</div>
+
+<!-- Risk -->
+<div class="risk-section">
+  <h2>⚠️ 风险评估</h2>
+  <table class="risk-table">
+    <tr><th>风险</th><th>等级</th><th>缓解措施</th></tr>
+    <tr>
+      <td>战斗引擎有bug导致对战不公平</td>
+      <td><span class="risk-label risk-high">高</span></td>
+      <td>Phase 0先本地验证，Phase 2加自动化测试覆盖</td>
+    </tr>
+    <tr>
+      <td>脚本沙箱被绕过（恶意代码执行）</td>
+      <td><span class="risk-label risk-high">高</span></td>
+      <td>使用isolated-vm专职工库，禁用网络/文件/子进程，5ms超时+4MB内存限制</td>
+    </tr>
+    <tr>
+      <td>你出设计图的时间不确定</td>
+      <td><span class="risk-label risk-mid">中</span></td>
+      <td>Phase 0-2不需要设计图也能做，等你方便时再启动Phase 3</td>
+    </tr>
+    <tr>
+      <td>冷启动没人玩</td>
+      <td><span class="risk-label risk-mid">中</span></td>
+      <td>先做观赏性：内置表演赛，没人也能看AI互殴；等有用户再开对战</td>
+    </tr>
+    <tr>
+      <td>AI Agent团队协作出bug互踢皮球</td>
+      <td><span class="risk-label risk-mid">中</span></td>
+      <td>MOSS作为技术负责人统一验收，每份产出过审查Agent才合并</td>
+    </tr>
+    <tr>
+      <td>回放数据量过大</td>
+      <td><span class="risk-label risk-low">低</span></td>
+      <td>gzip压缩存储，定期清理旧回放，服务器只记文字帧不渲染</td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align:center; margin-top:32px; font-size:13px; color:#999;">
+  生成于 2026-06-09 · 项目根目录: D:\HermesWorkspace\精灵决斗场\
+</div>
+</div>
+</body>
+</html>
