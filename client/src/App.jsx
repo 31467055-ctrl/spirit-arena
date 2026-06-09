@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
+  const API = import.meta.env.VITE_API_URL || ''
   const [pets, setPets] = useState([])
   const [matchLog, setMatchLog] = useState([])
   const [loading, setLoading] = useState(false)
@@ -12,7 +13,7 @@ function App() {
   const timerRef = useRef(null)
 
   useEffect(() => {
-    fetch('/api/pets').then(r => r.json()).then(setPets)
+    fetch(API + '/api/pets').then(r => r.json()).then(setPets)
   }, [])
 
   // 独立的渲染循环
@@ -143,7 +144,7 @@ function App() {
 
   const fight = async () => {
     setLoading(true)
-    const r = await fetch('/api/battle', {
+    const r = await fetch(API + '/api/battle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ challengerId: 'pet-dragon', defenderId: 'pet-sprite' }),
@@ -153,7 +154,7 @@ function App() {
     setLoading(false)
 
     // 获取回放
-    const replayData = await fetch('/api/matches/' + data.matchId + '/replay')
+    const replayData = await fetch(API + '/api/matches/' + data.matchId + '/replay')
     const replayJson = await replayData.json()
     replayRef.current = replayJson
     frameRef.current = 0
