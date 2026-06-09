@@ -30,29 +30,67 @@ function App() {
     const CELL = 40
     ctx.clearRect(0, 0, 400, 400)
 
-    // 地图
+    // 地图 - 完整纹理
     for (let y = 0; y < 10; y++) {
       for (let x = 0; x < 10; x++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? '#3a3a5c' : '#32325a'
-        ctx.fillRect(x * CELL, y * CELL, CELL, CELL)
+        const px = x * CELL, py = y * CELL
+        // 固定地图墙壁位置
+        const isWall = (x===0&&y===2)||(x===0&&y===7)||(x===2&&y===0)||(x===2&&y===3)||
+                       (x===2&&y===6)||(x===2&&y===9)||(x===3&&y===1)||(x===3&&y===8)||
+                       (x===6&&y===1)||(x===6&&y===8)||(x===7&&y===0)||(x===7&&y===3)||
+                       (x===7&&y===6)||(x===7&&y===9)||(x===9&&y===2)||(x===9&&y===7)
+        const isGrass = (x===1&&y===4)||(x===1&&y===5)||(x===3&&y===1)||(x===3&&y===8)||
+                       (x===6&&y===1)||(x===6&&y===8)||(x===8&&y===4)||(x===8&&y===5)
+        if (isWall) {
+          ctx.fillStyle = '#5c4033'
+          ctx.fillRect(px, py, CELL, CELL)
+          ctx.fillStyle = '#7a5a44'
+          ctx.fillRect(px+2, py+2, CELL-4, CELL-4)
+          ctx.fillStyle = '#4a3020'
+          ctx.fillRect(px+6, py+6, 4, 4)
+          ctx.fillRect(px+28, py+28, 4, 4)
+        } else if ((x===1&&y===4)||(x===1&&y===5)||(x===3&&y===1)||(x===3&&y===8)||
+                   (x===6&&y===1)||(x===6&&y===8)||(x===8&&y===4)||(x===8&&y===5)) {
+          ctx.fillStyle = '#2d5a27'
+          ctx.fillRect(px, py, CELL, CELL)
+          ctx.fillStyle = '#3a7a33'
+          ctx.fillRect(px+6, py+6, 6, 6)
+          ctx.fillRect(px+22, py+22, 5, 5)
+        } else {
+          ctx.fillStyle = (x + y) % 2 === 0 ? '#3a3a5c' : '#32325a'
+          ctx.fillRect(px, py, CELL, CELL)
+        }
       }
     }
 
-    // 墙壁
-    const walls = [[0,2],[0,7],[2,0],[2,3],[2,6],[2,9],[3,1],[3,8],[6,1],[6,8],[7,0],[7,3],[7,6],[7,9],[9,2],[9,7]]
-    for (const [x, y] of walls) {
-      ctx.fillStyle = '#5c4033'
-      ctx.fillRect(x*CELL, y*CELL, CELL, CELL)
-      ctx.fillStyle = '#7a5a44'
-      ctx.fillRect(x*CELL+2, y*CELL+2, CELL-4, CELL-4)
+    // 网格线
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 10; i++) {
+      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,400); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(400,i*CELL); ctx.stroke()
     }
 
     // 星尘
     if (frame.s) {
-      ctx.font = '20px sans-serif'
+      const pulse = Math.sin(Date.now() * 0.005) * 2
+      ctx.font = '22px sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('⭐', frame.s[0]*CELL+20, frame.s[1]*CELL+20)
+      ctx.fillText('⭐', frame.s[0]*CELL+20, frame.s[1]*CELL+20 + pulse)
+    }
+
+    // 子弹
+    if (frame.b) {
+      for (const b of frame.b) {
+        ctx.beginPath()
+        ctx.arc(b.x*CELL+20, b.y*CELL+20, 5, 0, Math.PI*2)
+        ctx.fillStyle = '#FFD93D'
+        ctx.shadowColor = '#FFD93D'
+        ctx.shadowBlur = 12
+        ctx.fill()
+        ctx.shadowBlur = 0
+      }
     }
 
     // 精灵
@@ -64,7 +102,9 @@ function App() {
       const [x, y, dir] = pos
       const cx = x * CELL + 20, cy = y * CELL + 20
 
-      // 护盾
+      ctx.save()
+
+      // 护盾光环
       if (frame.shield && frame.shield[i]) {
         ctx.beginPath()
         ctx.arc(cx, cy, 18, 0, Math.PI*2)
@@ -85,7 +125,7 @@ function App() {
       ctx.lineWidth = 2
       ctx.stroke()
 
-      // 方向
+      // 方向三角
       const angle = (dir || 0) * Math.PI / 2
       ctx.beginPath()
       ctx.moveTo(cx + Math.cos(angle)*18, cy + Math.sin(angle)*18)
@@ -95,30 +135,28 @@ function App() {
       ctx.fillStyle = '#fff'
       ctx.fill()
 
+      ctx.restore()
+
       // 名字
       ctx.fillStyle = '#fff'
-      ctx.font = 'bold 10px sans-serif'
+      ctx.font = 'bold 11px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText(names[i], cx, cy-24)
+      ctx.fillText(names[i], cx, cy - 24)
 
       // 击杀数
       const kills = i === 0 ? (frame.k0 || 0) : (frame.k1 || 0)
       ctx.fillStyle = '#FFD93D'
       ctx.font = 'bold 11px sans-serif'
-      ctx.fillText('💀'+kills, cx, cy+26)
-    }
+      ctx.fillText('💀' + kills, cx, cy + 26)
 
-    // 子弹
-    if (frame.b) {
-      ctx.fillStyle = '#FFD93D'
-      ctx.shadowColor = '#FFD93D'
-      ctx.shadowBlur = 12
-      for (const b of frame.b) {
-        ctx.beginPath()
-        ctx.arc(b.x*CELL+20, b.y*CELL+20, 5, 0, Math.PI*2)
-        ctx.fill()
+      // buff标签
+      let tags = []
+      if (frame.shield && frame.shield[i]) tags.push('🛡')
+      if (tags.length) {
+        ctx.font = '10px sans-serif'
+        ctx.fillStyle = '#888'
+        ctx.fillText(tags.join(' '), cx, cy + 38)
       }
-      ctx.shadowBlur = 0
     }
 
     // 帧计数
@@ -138,7 +176,7 @@ function App() {
         timerRef.current = setTimeout(advance, 100)
       }
     }
-    timerRef.current = setTimeout(advance, 100)
+    timerRef.current = setTimeout(advance, 200)
     return () => clearTimeout(timerRef.current)
   }, [battleId])
 

@@ -335,8 +335,8 @@ export function runBattle(code1, name1, code2, name2) {
       if (starTimer >= 25) { spawnStar(); starTimer = 0; }
     }
 
-    // 记录回放（每10帧记录一次以节省体积）
-    if (frame % 10 === 0) {
+    // 记录回放（每3帧记录一次）
+    if (frame % 3 === 0) {
       replayFrames.push({
         f: frame,
         p0: [p0.x, p0.y, p0.dir],
