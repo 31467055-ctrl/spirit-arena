@@ -173,11 +173,11 @@ function App() {
       if (frameRef.current < replayRef.current.length - 1) {
         frameRef.current++
         drawFrame()
-        timerRef.current = setTimeout(advance, 100)
+        timerRef.current = setTimeout(advance, 300)
       }
     }
     timerRef.current = setTimeout(advance, 300)
-    return () => clearTimeout(timerRef.current)
+    return () => { clearTimeout(timerRef.current); frameRef.current = 0; }
   }, [battleId])
 
   const fight = async () => {
