@@ -125,8 +125,12 @@ function aiThink(p, enemy, map, star) {
         ? (dx > 0 ? D.RIGHT : D.LEFT)
         : (dy > 0 ? D.DOWN : D.UP);
       const turn = turnDir(p.dir, aimDir);
-      if (turn) commands.unshift({type: 'turn', dir: (p.dir + (turn==='right'?1:3)) % 4});
-      commands.unshift({type: 'fire'});
+      if (turn) {
+        commands.unshift({type: 'fire'});
+        commands.unshift({type: 'turn', dir: (p.dir + (turn==='right'?1:3)) % 4});
+      } else {
+        commands.unshift({type: 'fire'});
+      }
     }
     if (dist < 5 && p.shieldCD <= 0 && p.shieldF <= 0) {
       commands.push({type: 'shield'});
