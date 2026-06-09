@@ -169,15 +169,21 @@ function App() {
   // 帧推进
   useEffect(() => {
     if (!replayRef.current || !replayRef.current.length) return
+    let active = true
     const advance = () => {
+      if (!active) return
       if (frameRef.current < replayRef.current.length - 1) {
         frameRef.current++
         drawFrame()
         timerRef.current = setTimeout(advance, 300)
+      } else {
+        // 回放结束，重置状态
+        replayRef.current = null
+        frameRef.current = 0
       }
     }
     timerRef.current = setTimeout(advance, 300)
-    return () => { clearTimeout(timerRef.current); frameRef.current = 0; }
+    return () => { active = false; clearTimeout(timerRef.current) }
   }, [battleId])
 
   const fight = async () => {
@@ -188,7 +194,6 @@ function App() {
       body: JSON.stringify({ challengerId: 'pet-dragon', defenderId: 'pet-sprite' }),
     })
     const data = await r.json()
-    setMatchLog(prev => [data, ...prev].slice(0, 20))
     setLoading(false)
 
     // 获取回放
@@ -198,6 +203,13 @@ function App() {
     frameRef.current = 0
     setBattleId(data.matchId)
     drawFrame()
+    
+    // 等回放播完再显示结果
+    const totalFrames = replayJson.length
+    const waitMs = totalFrames * 300 + 500
+    setTimeout(() => {
+      setMatchLog(prev => [data, ...prev].slice(0, 20))
+    }, waitMs)
   }
 
   return (
