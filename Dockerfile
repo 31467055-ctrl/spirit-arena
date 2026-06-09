@@ -1,7 +1,11 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./
+
+# 复制后端代码
+COPY server/package*.json ./
 RUN npm install
-COPY . .
+
+COPY server/src/ ./src/
+
 EXPOSE 3001
 CMD ["node", "src/index.js"]
