@@ -213,26 +213,26 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f4f8] p-4">
+    <div className="min-h-screen p-4" style={{background: '#1a1a2e'}}>
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-center mb-1" style={{color: '#58CC02'}}>
           🧙 精灵决斗场
         </h1>
-        <p className="text-center text-sm text-gray-500 mb-4">
+        <p className="text-center text-sm mb-4" style={{color: '#888'}}>
           AI自动对战 · 先到3杀获胜 · 45秒限时
         </p>
 
-        <div className="flex flex-wrap gap-4 justify-center">
-          <div className="bg-white rounded-xl shadow-md p-4 w-64">
+        <div className="flex justify-center items-start gap-4 flex-wrap">
+          <div className="rounded-xl p-4 w-64" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
             <h2 className="font-bold text-sm mb-3" style={{color: '#58CC02'}}>⚔️ 对战</h2>
             <div className="space-y-2 mb-4">
               {pets.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                <div key={p.id} className="flex items-center gap-2 rounded-lg p-2" style={{background: '#1e1e38'}}>
                   <div className="w-3 h-3 rounded-full" style={{
                     background: i === 0 ? '#FF6B6B' : '#4ECDC4'
                   }} />
-                  <span className="text-sm font-medium">{p.name}</span>
-                  <span className="text-xs text-gray-400 ml-auto">Elo:{p.elo}</span>
+                  <span className="text-sm font-medium" style={{color: '#e0e0e0'}}>{p.name}</span>
+                  <span className="text-xs ml-auto" style={{color: '#888'}}>Elo:{p.elo}</span>
                 </div>
               ))}
             </div>
@@ -241,28 +241,28 @@ function App() {
               onClick={fight}
               disabled={loading}
               className="w-full py-2 rounded-lg font-bold text-white text-sm"
-              style={{background: loading ? '#999' : '#58CC02', boxShadow: '0 4px 0 #3d8a02'}}
+              style={{background: loading ? '#555' : '#58CC02', boxShadow: '0 4px 0 #3d8a02'}}
             >
               {loading ? '⏳ 战斗中...' : '⚔️ 开始对战'}
             </button>
 
-            <div className="mt-4 max-h-40 overflow-y-auto text-xs">
+            <div className="mt-4 max-h-40 overflow-y-auto text-xs" style={{color: '#aaa'}}>
               {matchLog.map((m, i) => (
-                <div key={i} className="py-1 border-b border-gray-100 last:border-0">
+                <div key={i} className="py-1 border-b last:border-0" style={{borderColor: '#333'}}>
                   {m.winner
-                    ? <span className="text-green-600">🏆 {m.winner} 获胜</span>
-                    : <span className="text-gray-500">🤝 平局</span>
+                    ? <span style={{color: '#58CC02'}}>🏆 {m.winner} 获胜</span>
+                    : <span style={{color: '#888'}}>🤝 平局</span>
                   }
-                  <span className="text-gray-400 ml-2">({m.challengerKills}-{m.defenderKills})</span>
+                  <span className="ml-2" style={{color: '#666'}}>({m.challengerKills}-{m.defenderKills})</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-4">
+          <div className="rounded-xl p-0" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
             <canvas ref={canvasRef} width={400} height={400}
-              className="border-2 border-gray-200 rounded-lg"
-              style={{imageRendering: 'pixelated'}}
+              className="rounded-lg"
+              style={{imageRendering: 'pixelated', border: '3px solid #333'}}
             />
           </div>
         </div>
