@@ -221,25 +221,25 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4" style={{background: '#1a1a2e'}}>
       {/* 标题 */}
-      <h1 className="text-2xl font-bold text-center" style={{color: '#58CC02'}}>
+      <h1 className="text-3xl font-bold text-center" style={{color: '#58CC02'}}>
         🧙 精灵决斗场
       </h1>
-      <p className="text-center text-xs mb-3" style={{color: '#666'}}>
+      <p className="text-center text-sm mb-4" style={{color: '#666'}}>
         AI自动对战 · 先到3杀获胜 · 45秒限时
       </p>
 
       {/* 比分栏 */}
-      <div className="flex items-center gap-6 mb-3">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{background: '#1e1e38'}}>
-          <div className="w-3 h-3 rounded-full" style={{background: '#FF6B6B'}} />
-          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 14}}>小火龙</span>
-          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 18}} id="k0">💀0</span>
+      <div className="flex items-center gap-8 mb-4">
+        <div className="flex items-center gap-3 px-6 py-3 rounded-lg" style={{background: '#1e1e38'}}>
+          <div className="w-4 h-4 rounded-full" style={{background: '#FF6B6B'}} />
+          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 18}}>小火龙</span>
+          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 24}} id="k0">💀0</span>
         </div>
-        <span style={{color: '#666', fontSize: 20}}>VS</span>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{background: '#1e1e38'}}>
-          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 18}} id="k1">💀0</span>
-          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 14}}>水灵灵</span>
-          <div className="w-3 h-3 rounded-full" style={{background: '#4ECDC4'}} />
+        <span style={{color: '#555', fontSize: 28, fontWeight: 600}}>VS</span>
+        <div className="flex items-center gap-3 px-6 py-3 rounded-lg" style={{background: '#1e1e38'}}>
+          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 24}} id="k1">💀0</span>
+          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 18}}>水灵灵</span>
+          <div className="w-4 h-4 rounded-full" style={{background: '#4ECDC4'}} />
         </div>
       </div>
 
