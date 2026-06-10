@@ -339,9 +339,8 @@ export function runBattle(code1, name1, code2, name2) {
       if (starTimer >= 25) { spawnStar(); starTimer = 0; }
     }
 
-    // 记录回放（每3帧记录一次）
-    if (frame % 3 === 0) {
-      replayFrames.push({
+    // 记录回放（每帧记录）
+    replayFrames.push({
         f: frame,
         p0: [p0.x, p0.y, p0.dir],
         p1: [p1.x, p1.y, p1.dir],
@@ -351,7 +350,6 @@ export function runBattle(code1, name1, code2, name2) {
         shield: [p0.shieldF>0, p1.shieldF>0],
         ev: events,
       });
-    }
   }
 
   if (!winner) winner = p0.kills >= p1.kills ? (p0.kills > p1.kills ? p0 : null) : p1;

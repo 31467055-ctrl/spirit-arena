@@ -175,14 +175,14 @@ function App() {
       if (frameRef.current < replayRef.current.length - 1) {
         frameRef.current++
         drawFrame()
-        timerRef.current = setTimeout(advance, 300)
+        timerRef.current = setTimeout(advance, 100)
       } else {
-        // 回放结束，重置状态
+        // 回放结束
         replayRef.current = null
         frameRef.current = 0
       }
     }
-    timerRef.current = setTimeout(advance, 300)
+    timerRef.current = setTimeout(advance, 100)
     return () => { active = false; clearTimeout(timerRef.current) }
   }, [battleId])
 
@@ -206,7 +206,7 @@ function App() {
     
     // 等回放播完再显示结果
     const totalFrames = replayJson.length
-    const waitMs = totalFrames * 300 + 500
+    const waitMs = totalFrames * 100 + 500
     setTimeout(() => {
       setMatchLog(prev => [data, ...prev].slice(0, 20))
     }, waitMs)
