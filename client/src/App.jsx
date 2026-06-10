@@ -27,8 +27,8 @@ function App() {
     const frame = replay[frameRef.current]
     if (!frame) return
 
-    const CELL = 40
-    ctx.clearRect(0, 0, 400, 400)
+    const CELL = 60 // 600/10
+    ctx.clearRect(0, 0, 600, 600)
 
     // 地图 - 完整纹理
     for (let y = 0; y < 10; y++) {
@@ -67,8 +67,8 @@ function App() {
     ctx.strokeStyle = 'rgba(255,255,255,0.04)'
     ctx.lineWidth = 1
     for (let i = 0; i <= 10; i++) {
-      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,400); ctx.stroke()
-      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(400,i*CELL); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,600); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(600,i*CELL); ctx.stroke()
     }
 
     // 星尘
@@ -163,7 +163,7 @@ function App() {
     ctx.fillStyle = '#888'
     ctx.font = '11px sans-serif'
     ctx.textAlign = 'right'
-    ctx.fillText(`帧 ${frameRef.current+1}/${replay.length}`, 390, 15)
+    ctx.fillText(`帧 ${frameRef.current+1}/${replay.length}`, 590, 20)
   }
 
   // 帧推进
@@ -213,17 +213,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen p-4" style={{background: '#1a1a2e'}}>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-center mb-1" style={{color: '#58CC02'}}>
-          🧙 精灵决斗场
-        </h1>
-        <p className="text-center text-sm mb-4" style={{color: '#888'}}>
-          AI自动对战 · 先到3杀获胜 · 45秒限时
-        </p>
-
-        <div className="flex justify-center items-start gap-4 flex-wrap">
-          <div className="rounded-xl p-4 w-64" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background: '#1a1a2e'}}>
+      <div className="flex gap-6 items-start flex-wrap justify-center">
+        <div className="rounded-xl p-4 w-64" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
             <h2 className="font-bold text-sm mb-3" style={{color: '#58CC02'}}>⚔️ 对战</h2>
             <div className="space-y-2 mb-4">
               {pets.map((p, i) => (
@@ -260,15 +252,14 @@ function App() {
           </div>
 
           <div className="rounded-xl p-0" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
-            <canvas ref={canvasRef} width={400} height={400}
+            <canvas ref={canvasRef} width={600} height={600}
               className="rounded-lg"
-              style={{imageRendering: 'pixelated', border: '3px solid #333'}}
+              style={{imageRendering: 'pixelated', border: '3px solid #333', display: 'block'}}
             />
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-export default App
+    )
+  }
+  
+  export default App
