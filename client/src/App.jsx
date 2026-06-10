@@ -221,21 +221,9 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4" style={{background: '#1a1a2e'}}>
       {/* 标题 */}
-      <div className="text-center mb-1">
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <span style={{fontSize: 28}}>⚔️</span>
-          <span style={{fontSize: 28}}>🐉</span>
-          <span style={{fontSize: 28}}>✨</span>
-        </div>
-        <h1 className="text-3xl font-bold" style={{color: '#58CC02'}}>
-          精灵决斗场
-        </h1>
-        <div className="flex items-center justify-center gap-2 mt-1">
-          <span style={{fontSize: 14}}>⚡</span>
-          <span style={{fontSize: 14}}>🏆</span>
-          <span style={{fontSize: 14}}>🎮</span>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold text-center mb-1" style={{color: '#58CC02'}}>
+        精灵决斗场
+      </h1>
       <p className="text-center text-sm mb-4" style={{color: '#666'}}>
         AI自动对战 · 先到3杀获胜 · 45秒限时
       </p>
