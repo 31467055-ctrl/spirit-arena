@@ -164,6 +164,12 @@ function App() {
     ctx.font = '11px sans-serif'
     ctx.textAlign = 'right'
     ctx.fillText(`帧 ${frameRef.current+1}/${replay.length}`, 590, 20)
+
+    // 更新比分DOM
+    const k0el = document.getElementById('k0')
+    const k1el = document.getElementById('k1')
+    if (k0el && frame.k0 !== undefined) k0el.textContent = '💀' + frame.k0
+    if (k1el && frame.k1 !== undefined) k1el.textContent = '💀' + frame.k1
   }
 
   // 帧推进
@@ -213,53 +219,74 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{background: '#1a1a2e'}}>
-      <div className="flex gap-6 items-start flex-wrap justify-center">
-        <div className="rounded-xl p-4 w-64" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
-            <h2 className="font-bold text-sm mb-3" style={{color: '#58CC02'}}>⚔️ 对战</h2>
-            <div className="space-y-2 mb-4">
-              {pets.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-2 rounded-lg p-2" style={{background: '#1e1e38'}}>
-                  <div className="w-3 h-3 rounded-full" style={{
-                    background: i === 0 ? '#FF6B6B' : '#4ECDC4'
-                  }} />
-                  <span className="text-sm font-medium" style={{color: '#e0e0e0'}}>{p.name}</span>
-                  <span className="text-xs ml-auto" style={{color: '#888'}}>Elo:{p.elo}</span>
-                </div>
-              ))}
-            </div>
+    <div className="min-h-screen flex flex-col items-center p-4" style={{background: '#1a1a2e'}}>
+      {/* 标题 */}
+      <h1 className="text-2xl font-bold text-center" style={{color: '#58CC02'}}>
+        🧙 精灵决斗场
+      </h1>
+      <p className="text-center text-xs mb-3" style={{color: '#666'}}>
+        AI自动对战 · 先到3杀获胜 · 45秒限时
+      </p>
 
-            <button
-              onClick={fight}
-              disabled={loading}
-              className="w-full py-2 rounded-lg font-bold text-white text-sm"
-              style={{background: loading ? '#555' : '#58CC02', boxShadow: '0 4px 0 #3d8a02'}}
-            >
-              {loading ? '⏳ 战斗中...' : '⚔️ 开始对战'}
-            </button>
-
-            <div className="mt-4 max-h-40 overflow-y-auto text-xs" style={{color: '#aaa'}}>
-              {matchLog.map((m, i) => (
-                <div key={i} className="py-1 border-b last:border-0" style={{borderColor: '#333'}}>
-                  {m.winner
-                    ? <span style={{color: '#58CC02'}}>🏆 {m.winner} 获胜</span>
-                    : <span style={{color: '#888'}}>🤝 平局</span>
-                  }
-                  <span className="ml-2" style={{color: '#666'}}>({m.challengerKills}-{m.defenderKills})</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl p-0" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
-            <canvas ref={canvasRef} width={600} height={600}
-              className="rounded-lg"
-              style={{imageRendering: 'pixelated', border: '3px solid #333', display: 'block'}}
-            />
-          </div>
+      {/* 比分栏 */}
+      <div className="flex items-center gap-6 mb-3">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{background: '#1e1e38'}}>
+          <div className="w-3 h-3 rounded-full" style={{background: '#FF6B6B'}} />
+          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 14}}>小火龙</span>
+          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 18}} id="k0">💀0</span>
+        </div>
+        <span style={{color: '#666', fontSize: 20}}>VS</span>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{background: '#1e1e38'}}>
+          <span style={{color: '#FFD93D', fontWeight: 700, fontSize: 18}} id="k1">💀0</span>
+          <span style={{color: '#e0e0e0', fontWeight: 600, fontSize: 14}}>水灵灵</span>
+          <div className="w-3 h-3 rounded-full" style={{background: '#4ECDC4'}} />
         </div>
       </div>
-    )
+
+      {/* 游戏画面 */}
+      <div className="rounded-xl" style={{background: '#262640', boxShadow: '0 4px 0 rgba(0,0,0,0.3)'}}>
+        <canvas ref={canvasRef} width={600} height={600}
+          className="rounded-lg"
+          style={{imageRendering: 'pixelated', border: '3px solid #333', display: 'block'}}
+        />
+      </div>
+
+      {/* 控制栏 */}
+      <div className="flex items-center gap-3 mt-3">
+        <button
+          onClick={fight}
+          disabled={loading}
+          className="px-6 py-2 rounded-lg font-bold text-white text-sm"
+          style={{background: loading ? '#555' : '#58CC02', boxShadow: '0 4px 0 #3d8a02'}}
+        >
+          {loading ? '⏳ 战斗中...' : '⚔️ 开始对战'}
+        </button>
+        {matchLog.length > 0 && (
+          <div className="text-xs px-3 py-2 rounded-lg" style={{background: '#1e1e38', color: '#aaa'}}>
+            上局：{matchLog[0].winner
+              ? <span style={{color: '#58CC02'}}>🏆 {matchLog[0].winner}</span>
+              : <span>🤝 平局</span>
+            } ({matchLog[0].challengerKills}-{matchLog[0].defenderKills})
+          </div>
+        )}
+      </div>
+
+      {/* 对战记录 */}
+      {matchLog.length > 1 && (
+        <div className="mt-3 max-h-32 overflow-y-auto text-xs px-3 py-2 rounded-lg" style={{background: '#1e1e38', color: '#888', width: 400}}>
+          {matchLog.slice(1).map((m, i) => (
+            <div key={i} className="py-1" style={{borderBottom: i < matchLog.length-2 ? '1px solid #2a2a3e' : 'none'}}>
+              {m.winner ? <span style={{color: '#58CC02'}}>🏆 {m.winner}</span> : <span>🤝 平局</span>}
+              <span style={{color: '#666'}}> ({m.challengerKills}-{m.defenderKills})</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 用ref更新比分 */}
+      <div style={{display: 'none'}}>{/* 比分通过DOM更新 */}</div>
+    </div>
+  )
   }
   
   export default App
