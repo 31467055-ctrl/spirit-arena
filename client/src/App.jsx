@@ -268,8 +268,13 @@ function App() {
         <button
           onClick={fight}
           disabled={loading}
-          className="px-10 py-3 rounded-xl font-bold text-white text-base"
-          style={{background: loading ? '#555' : '#58CC02', boxShadow: '0 5px 0 #3d8a02', fontSize: 17}}
+          className="font-bold text-white rounded-xl"
+          style={{
+            background: loading ? '#555' : '#58CC02',
+            boxShadow: '0 6px 0 #3d8a02',
+            fontSize: 22,
+            padding: '14px 48px',
+          }}
         >
           {loading ? '⏳ 战斗中...' : '⚔️ 开始对战'}
         </button>
