@@ -470,6 +470,12 @@ class Engine {
         for (const p of this.pets) {
           if (p.id === b.owner || !p.alive) continue;
           if (p.x === nx && p.y === ny) {
+            // 草地闪避：在草丛中有50%概率躲开
+            const inGrass = this.map[p.y][p.x] === T.GRASS;
+            if (inGrass && Math.random() < 0.5) {
+              this.log('action', `🌿 ${p.name} 躲进草丛，避开了攻击！`);
+              continue;
+            }
             if (p.shielded) {
               b.alive = false; p.shieldF = 0;
               this.log('action', `🛡 ${p.name} 护盾挡住了攻击！`);
@@ -748,7 +754,9 @@ class Engine {
       if (!p.alive) continue;
       const cx = p.x*CELL+20, cy = p.y*CELL+20;
       ctx.save();
-      ctx.globalAlpha = p.cloaked ? 0.35 : 1;
+      // 草地隐身（半透明）
+      const onGrass = this.map[p.y][p.x] === T.GRASS;
+      ctx.globalAlpha = p.cloaked ? 0.2 : onGrass ? 0.4 : 1;
       // 护盾光环
       if (p.shielded) {
         ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2);

@@ -337,6 +337,9 @@ export function runBattle(code1, name1, code2, name2) {
         for (const p of pets) {
           if (p.id === b.owner || !p.alive) continue;
           if (p.x === nx && p.y === ny) {
+            // 草地闪避50%
+            const inGrass = map[p.y][p.x] === T.GRASS;
+            if (inGrass && Math.random() < 0.5) { continue; }
             if (p.shielded) {
               b.alive = false; p.shieldF = 0;
             } else {
