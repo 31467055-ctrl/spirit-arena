@@ -36,6 +36,16 @@ export async function initDB() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      nickname TEXT NOT NULL DEFAULT '',
+      api_key TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
   // 插入两个默认精灵用于本地演示
   const count = db.exec("SELECT COUNT(*) as c FROM pets");
   if (count[0].values[0][0] === 0) {
