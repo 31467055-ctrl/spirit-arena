@@ -767,22 +767,25 @@ class Engine {
       // 根据精灵ID画不同的形象
       const drawPet = (id, color) => {
         if (id === 0) {
-          // 小火龙：圆身体+火焰纹+小角
+          // 小火龙：圆身体+火焰纹+小角+眼睛
           ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
           ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-          // 火焰纹
+          // 火焰纹（朝方向喷火）
           for (let a=0; a<3; a++) {
             const ang = p.dir * Math.PI/2 + (a-1)*0.4;
-            ctx.beginPath(); ctx.arc(cx+Math.cos(ang)*12, cy+Math.sin(ang)*12-2, 5, 0, Math.PI);
+            ctx.beginPath(); ctx.arc(cx+Math.cos(ang)*14, cy+Math.sin(ang)*14-2, 5+Math.sin(Date.now()*0.01+a)*1, 0, Math.PI);
             ctx.fillStyle = '#FFD93D'; ctx.fill();
           }
+          // 小角
+          ctx.beginPath(); ctx.moveTo(cx-5, cy-12); ctx.lineTo(cx-3, cy-18); ctx.lineTo(cx-1, cy-12); ctx.fillStyle='#FFD93D'; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(cx+1, cy-12); ctx.lineTo(cx+3, cy-18); ctx.lineTo(cx+5, cy-12); ctx.fillStyle='#FFD93D'; ctx.fill();
           // 眼睛
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 3, 0, Math.PI*2); ctx.fill();
           ctx.beginPath(); ctx.arc(cx+4, cy-2, 3, 0, Math.PI*2); ctx.fill();
           ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
           ctx.beginPath(); ctx.arc(cx+4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
         } else if (id === 1) {
-          // 水灵灵：水滴形+水波
+          // 水灵灵：水滴形+水波+眼睛
           ctx.beginPath(); ctx.arc(cx, cy-2, 13, Math.PI, 0); ctx.fillStyle = color; ctx.fill();
           ctx.closePath();
           ctx.fillStyle = color; ctx.beginPath(); ctx.arc(cx, cy+4, 10, 0, Math.PI*2); ctx.fill();
@@ -792,15 +795,74 @@ class Engine {
             ctx.beginPath(); ctx.arc(cx, cy+8+w*4, 6-w*2, 0, Math.PI);
             ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth=1.5; ctx.stroke();
           }
+          // 眼睛
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 3, 0, Math.PI*2); ctx.fill();
           ctx.beginPath(); ctx.arc(cx+4, cy-2, 3, 0, Math.PI*2); ctx.fill();
           ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
           ctx.beginPath(); ctx.arc(cx+4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
-        } else {
-          // 默认圆形
-          ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2);
-          ctx.fillStyle = color; ctx.fill();
+        } else if (id === 2) {
+          // 闪电鼠：椭圆身体+闪电尾巴+大耳朵
+          ctx.beginPath(); ctx.ellipse(cx, cy, 14, 11, 0, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
           ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          // 大耳朵
+          ctx.beginPath(); ctx.ellipse(cx-9, cy-9, 5, 7, -0.3, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(cx+9, cy-9, 5, 7, 0.3, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(cx-9, cy-9, 3, 4, -0.3, 0, Math.PI*2); ctx.fillStyle = '#FFB3B3'; ctx.fill();
+          ctx.beginPath(); ctx.ellipse(cx+9, cy-9, 3, 4, 0.3, 0, Math.PI*2); ctx.fillStyle = '#FFB3B3'; ctx.fill();
+          // 闪电尾巴
+          ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx-3, cy+16); ctx.lineTo(cx+1, cy+16); ctx.lineTo(cx-2, cy+22); ctx.lineTo(cx+4, cy+14); ctx.lineTo(cx-1, cy+14); ctx.closePath();
+          ctx.fillStyle = '#FFD93D'; ctx.fill();
+          // 眼睛
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-1, 3, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-1, 3, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-1, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-1, 1.5, 0, Math.PI*2); ctx.fill();
+        } else if (id === 3) {
+          // 风之翼：菱形身体+翅膀
+          ctx.beginPath(); ctx.moveTo(cx, cy-15); ctx.lineTo(cx+12, cy); ctx.lineTo(cx, cy+15); ctx.lineTo(cx-12, cy); ctx.closePath();
+          ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          // 翅膀
+          ctx.beginPath(); ctx.moveTo(cx-10, cy-5); ctx.lineTo(cx-22, cy-14); ctx.lineTo(cx-18, cy-4); ctx.closePath();
+          ctx.fillStyle = 'rgba(206,130,255,0.5)'; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(cx+10, cy-5); ctx.lineTo(cx+22, cy-14); ctx.lineTo(cx+18, cy-4); ctx.closePath();
+          ctx.fillStyle = 'rgba(206,130,255,0.5)'; ctx.fill();
+          // 眼睛
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 2.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 2.5, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+        } else if (id === 4) {
+          // 石巨人：方块身体+裂纹
+          ctx.fillStyle = color; ctx.fillRect(cx-13, cy-13, 26, 26);
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(cx-13, cy-13, 26, 26);
+          // 裂纹
+          ctx.strokeStyle = '#6a5a40'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(cx-5, cy-8); ctx.lineTo(cx+2, cy-2); ctx.lineTo(cx-3, cy+5); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(cx+6, cy+2); ctx.lineTo(cx+10, cy+8); ctx.stroke();
+          // 眼睛
+          ctx.fillStyle = '#FFD93D'; ctx.beginPath(); ctx.arc(cx-4, cy-4, 3, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-4, 3, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-4, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-4, 1.5, 0, Math.PI*2); ctx.fill();
+        } else {
+          // 暗影猫：圆身体+尖耳朵+尾巴
+          ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          // 尖耳朵
+          ctx.beginPath(); ctx.moveTo(cx-9, cy-8); ctx.lineTo(cx-5, cy-18); ctx.lineTo(cx-1, cy-10); ctx.closePath();
+          ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(cx+1, cy-10); ctx.lineTo(cx+5, cy-18); ctx.lineTo(cx+9, cy-8); ctx.closePath();
+          ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+          // 耳内粉色
+          ctx.beginPath(); ctx.moveTo(cx-7, cy-9); ctx.lineTo(cx-5, cy-15); ctx.lineTo(cx-3, cy-10); ctx.closePath(); ctx.fillStyle='#FFB3B3'; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(cx+3, cy-10); ctx.lineTo(cx+5, cy-15); ctx.lineTo(cx+7, cy-9); ctx.closePath(); ctx.fillStyle='#FFB3B3'; ctx.fill();
+          // 尾巴
+          ctx.beginPath(); ctx.arc(cx+12, cy+8, 5, -0.5, 1.5); ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+          // 眼睛
+          ctx.fillStyle = '#9fef00'; ctx.beginPath(); ctx.arc(cx-4, cy-1, 3, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-1, 3, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-1, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-1, 1.5, 0, Math.PI*2); ctx.fill();
         }
       };
       const angle = p.dir * Math.PI/2;
