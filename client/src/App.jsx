@@ -4,6 +4,7 @@ import BattlePage from './pages/BattlePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import CreatePetPage from './pages/CreatePetPage.jsx'
 import MyPetsPage from './pages/MyPetsPage.jsx'
+import MatchPage from './pages/MatchPage.jsx'
 import HelpPage from './pages/HelpPage.jsx'
 
 const API = import.meta.env.VITE_API_URL || ''
@@ -23,6 +24,7 @@ function App() {
              : <LoginPage onLogin={(u) => { setUser(u); localStorage.setItem('spirit_user', JSON.stringify(u)) }} />
       } />
       <Route path="/battle" element={<BattlePage API={API} />} />
+      <Route path="/match" element={<MatchPage API={API} user={user} />} />
       <Route path="/create-pet" element={<CreatePetPage API={API} user={user} />} />
       <Route path="/my-pets" element={<MyPetsPage API={API} user={user} />} />
       <Route path="/help" element={<HelpPage />} />
@@ -42,6 +44,11 @@ function MainMenu({ user, onLogout }) {
           className="w-full py-3 rounded-xl font-bold text-white text-base"
           style={{background: '#58CC02', boxShadow: '0 5px 0 #3d8a02'}}>
           ⚔️ 观看对战
+        </button>
+        <button onClick={() => nav('/match')}
+          className="w-full py-3 rounded-xl font-bold text-white text-base"
+          style={{background: '#FF4B4B', boxShadow: '0 5px 0 #cc3333'}}>
+          ⚡ 匹配对战
         </button>
         <button onClick={() => nav('/my-pets')}
           className="w-full py-3 rounded-xl font-bold text-white text-base"

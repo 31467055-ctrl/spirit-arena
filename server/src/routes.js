@@ -257,4 +257,88 @@ router.get('/leaderboard', (req, res) => {
   res.json(list);
 });
 
+// ===== 匹配对战 =====
+
+// 加入匹配队列
+router.post('/match/join', (req, res) => {
+  const { userId, petId } = req.body;
+  if (!userId || !petId) return res.status(400).json({ error: 'userId and petId required' });
+  const db = getDB();
+
+  // 检查是否有其他人在等
+  const waiting = db.exec("SELECT user_id, pet_id FROM match_queue WHERE user_id != ? ORDER BY created_at ASC LIMIT 1", [userId]);
+  
+  if (waiting[0] && waiting[0].values.length > 0) {
+    // 有人匹配上了！
+    const [opponentUserId, opponentPetId] = waiting[0].values[0];
+    
+    // 从队列移除对手
+    db.run("DELETE FROM match_queue WHERE user_id = ?", [opponentUserId]);
+    
+    // 获取双方的精灵代码
+    const r1 = db.exec("SELECT id, name, code FROM pets WHERE id = ?", [petId]);
+    const r2 = db.exec("SELECT id, name, code FROM pets WHERE id = ?", [opponentPetId]);
+    
+    if (!r1[0] || !r1[0].values.length || !r2[0] || !r2[0].values.length) {
+      return res.status(404).json({ error: 'pet not found' });
+    }
+
+    const [cId, cName, cCode] = r1[0].values[0];
+    const [dId, dName, dCode] = r2[0].values[0];
+    const result = runBattle(cCode, cName, dCode, dName);
+
+    const matchId = 'match-' + uuid().slice(0, 8);
+    let winnerId = null;
+    if (result.winnerId === 0) winnerId = cId;
+    else if (result.winnerId === 1) winnerId = dId;
+
+    db.run(
+      "INSERT INTO matches (id, challenger_id, defender_id, winner_id, challenger_kills, defender_kills, frames, replay) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [matchId, cId, dId, winnerId, result.kills[0], result.kills[1], result.frames, JSON.stringify(result.replay)]
+    );
+
+    if (winnerId === cId) {
+      db.run("UPDATE pets SET wins = wins + 1, elo = elo + 16 WHERE id = ?", [cId]);
+      db.run("UPDATE pets SET losses = losses + 1, elo = MAX(0, elo - 16) WHERE id = ?", [dId]);
+    } else if (winnerId === dId) {
+      db.run("UPDATE pets SET wins = wins + 1, elo = elo + 16 WHERE id = ?", [dId]);
+      db.run("UPDATE pets SET losses = losses + 1, elo = MAX(0, elo - 16) WHERE id = ?", [cId]);
+    }
+
+    res.json({
+      matched: true,
+      matchId,
+      winner: result.winner,
+      myKills: result.kills[0],
+      opponentKills: result.kills[1],
+      opponentName: dName,
+    });
+  } else {
+    // 没人等，自己进队列
+    db.run("INSERT OR REPLACE INTO match_queue (user_id, pet_id) VALUES (?, ?)", [userId, petId]);
+    res.json({ matched: false, waiting: true });
+  }
+});
+
+// 退出匹配队列
+router.post('/match/leave', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+  const db = getDB();
+  db.run("DELETE FROM match_queue WHERE user_id = ?", [userId]);
+  res.json({ ok: true });
+});
+
+// 检查匹配状态（轮询用）
+router.get('/match/status', (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  const db = getDB();
+  // 检查是否有对战结果——这里简化处理，直接查看匹配队列状态
+  const inQueue = db.exec("SELECT COUNT(*) as c FROM match_queue WHERE user_id = ?", [userId]);
+  const waiting = inQueue[0] && inQueue[0].values[0][0] > 0;
+  res.json({ waiting });
+});
+
 export default router;

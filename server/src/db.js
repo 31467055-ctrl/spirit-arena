@@ -42,6 +42,15 @@ export async function initDB() {
       username TEXT UNIQUE NOT NULL,
       nickname TEXT NOT NULL DEFAULT '',
       api_key TEXT DEFAULT '',
+      online INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS match_queue (
+      user_id TEXT PRIMARY KEY,
+      pet_id TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
