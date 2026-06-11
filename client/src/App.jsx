@@ -4,6 +4,7 @@ import BattlePage from './pages/BattlePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import CreatePetPage from './pages/CreatePetPage.jsx'
 import MyPetsPage from './pages/MyPetsPage.jsx'
+import HelpPage from './pages/HelpPage.jsx'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -24,6 +25,7 @@ function App() {
       <Route path="/battle" element={<BattlePage API={API} />} />
       <Route path="/create-pet" element={<CreatePetPage API={API} user={user} />} />
       <Route path="/my-pets" element={<MyPetsPage API={API} user={user} />} />
+      <Route path="/help" element={<HelpPage />} />
     </Routes>
   )
 }
@@ -51,9 +53,14 @@ function MainMenu({ user, onLogout }) {
           style={{background: '#CE82FF', boxShadow: '0 5px 0 #9a5fd6'}}>
           ✨ 创建精灵
         </button>
-        <button onClick={onLogout}
+        <button onClick={() => nav('/help')}
           className="w-full py-2 rounded-lg text-sm"
           style={{color: '#888'}}>
+          📖 游戏指南
+        </button>
+        <button onClick={onLogout}
+          className="w-full py-2 rounded-lg text-sm"
+          style={{color: '#666'}}>
           退出登录
         </button>
       </div>
