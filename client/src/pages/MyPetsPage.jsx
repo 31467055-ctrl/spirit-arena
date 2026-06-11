@@ -40,6 +40,45 @@ export default function MyPetsPage({ API, user }) {
     alert('✅ API Key 已保存')
   }
 
+  const generateWithAI = async () => {
+    const prompt = document.getElementById('aiPrompt')?.value
+    const status = document.getElementById('aiStatus')
+    if (!prompt || !selected || !user) {
+      if (status) status.textContent = '⚠️ 请先填写上面的提示词'
+      return
+    }
+    // 从localStorage取Key
+    const savedKey = apiKeyInput
+    if (!savedKey) {
+      if (status) status.textContent = '⚠️ 请先填写API Key'
+      return
+    }
+    if (status) status.textContent = '🤖 AI正在思考...'
+    
+    try {
+      // 调用AI生成脚本（通过后端代理调用）
+      const r = await fetch(API + '/api/ai/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          petName: selected.name,
+          apiKey: savedKey,
+          provider: savedKey.startsWith('sk-') ? 'deepseek' : 'openai',
+        }),
+      })
+      const data = await r.json()
+      if (data.code) {
+        setCode(data.code)
+        if (status) status.textContent = '✅ 脚本已生成！请检查后保存'
+      } else {
+        if (status) status.textContent = '❌ 生成失败：' + (data.error || '未知错误')
+      }
+    } catch(e) {
+      if (status) status.textContent = '❌ 连接失败：' + e.message
+    }
+  }
+
   if (!user) return <div className="min-h-screen flex items-center justify-center" style={{background:'#1a1a2e', color:'#888'}}>请先登录</div>
 
   return (
@@ -98,10 +137,28 @@ export default function MyPetsPage({ API, user }) {
                 </button>
               </div>
 
+              {/* 自然语言指挥AI */}
+              <div className="rounded-xl p-4 mb-3" style={{background: '#262640'}}>
+                <h3 className="text-xs font-bold mb-2" style={{color: '#FFD93D'}}>🧠 用自然语言指挥AI</h3>
+                <p className="text-xs mb-2" style={{color: '#666'}}>
+                  用你的话说出想要的打法，AI自动生成脚本。需要先填好上面的API Key。
+                </p>
+                <textarea id="aiPrompt" rows={3}
+                  placeholder='例如："帮我写个脚本：优先抢星星，看到敌人就追着打，近身时开盾，打不过就隐身跑路"'
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none mb-2"
+                  style={{background: '#1e1e38', color: '#e0e0e0', border: '1px solid #333', resize: 'vertical'}} />
+                <button onClick={generateWithAI}
+                  className="w-full py-2 rounded-lg font-bold text-white text-xs mb-2"
+                  style={{background: '#FFD93D', boxShadow: '0 3px 0 #c8a800', color: '#333'}}>
+                  🤖 让AI写脚本
+                </button>
+                <div id="aiStatus" style={{color: '#888', fontSize: 11}}></div>
+              </div>
+
               {/* 脚本编辑器 */}
               <div className="rounded-xl p-4 mb-3" style={{background: '#262640'}}>
                 <h3 className="text-xs font-bold mb-2" style={{color: '#4ECDC4'}}>📝 精灵脚本</h3>
-                <textarea value={code} onChange={e => setCode(e.target.value)}
+                <textarea id="codeEditor" value={code} onChange={e => setCode(e.target.value)}
                   rows={8} className="w-full px-3 py-2 rounded-lg text-xs outline-none mb-2 font-mono"
                   style={{background: '#1e1e38', color: '#e0e0e0', border: '1px solid #333', resize: 'vertical'}} />
                 <button onClick={saveCode}

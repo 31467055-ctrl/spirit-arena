@@ -126,6 +126,61 @@ router.post('/agent/pet/code', (req, res) => {
   res.json({ ok: true, tank: { id: token } });
 });
 
+// ===== AI 生成脚本 =====
+router.post('/ai/generate-script', async (req, res) => {
+  const { prompt, petName, apiKey, provider } = req.body;
+  if (!prompt || !apiKey) return res.status(400).json({ error: 'prompt and apiKey required' });
+
+  const systemPrompt = `你是一个精灵对战游戏的JavaScript脚本生成器。用户会告诉你想要什么打法，你生成对应的onIdle函数代码。
+
+规则：
+- 只输出JavaScript代码，不要解释
+- 函数名必须是 onIdle(me, enemy, game)
+- me.go()=前进  me.turn("left"/"right")=转向  me.fire()=攻击
+- me.shield()=护盾  me.cloak()=隐身  me.boost()=加速
+- me.position=[x,y]  enemy.position=[x,y]  game.star=[x,y]或null  game.map[x][y]="."/"x"/"o"
+- 用BFS寻路: 先水平走到目标同一列,再垂直走
+- 优先抢星星(game.star), 有敌人在射程内(<6格)就面向敌人开火
+- 近身(<4格)开盾, 打不过可以跑
+- 闲置时巡逻`;
+
+  try {
+    const baseUrl = provider === 'deepseek' 
+      ? 'https://api.deepseek.com/v1/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions';
+    
+    const response = await fetch(baseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: provider === 'deepseek' ? 'deepseek-chat' : 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `${petName ? '精灵名：' + petName + '。' : ''}用户需求：${prompt}` },
+        ],
+        max_tokens: 2000,
+        temperature: 0.3,
+      }),
+    });
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    // 提取代码块
+    const match = text.match(/function onIdle[\s\S]*?^}/m) || text.match(/```(?:javascript)?([\s\S]*?)```/);
+    const code = match ? (match[1] || match[0]).trim() : text.trim();
+    
+    if (code.startsWith('function') || code.includes('onIdle')) {
+      res.json({ code });
+    } else {
+      res.json({ error: 'AI没有生成有效的脚本', raw: text.substring(0, 200) });
+    }
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+
 // ===== 对战 =====
 router.post('/battle', (req, res) => {
   const { challengerId, defenderId } = req.body;
