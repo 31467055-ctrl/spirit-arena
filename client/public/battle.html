@@ -759,22 +759,52 @@ class Engine {
       ctx.globalAlpha = p.cloaked ? 0.2 : onGrass ? 0.4 : 1;
       // 护盾光环
       if (p.shielded) {
-        ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2);
+        ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI*2);
         ctx.strokeStyle = '#58CC02'; ctx.lineWidth = 3;
         ctx.shadowColor = '#58CC02'; ctx.shadowBlur = 18; ctx.stroke();
         ctx.shadowBlur = 0;
       }
-      // 身体
-      ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2);
-      ctx.fillStyle = p.color; ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-      // 方向三角
+      // 根据精灵ID画不同的形象
+      const drawPet = (id, color) => {
+        if (id === 0) {
+          // 小火龙：圆身体+火焰纹+小角
+          ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          // 火焰纹
+          for (let a=0; a<3; a++) {
+            const ang = p.dir * Math.PI/2 + (a-1)*0.4;
+            ctx.beginPath(); ctx.arc(cx+Math.cos(ang)*12, cy+Math.sin(ang)*12-2, 5, 0, Math.PI);
+            ctx.fillStyle = '#FFD93D'; ctx.fill();
+          }
+          // 眼睛
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 3, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 3, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+        } else if (id === 1) {
+          // 水灵灵：水滴形+水波
+          ctx.beginPath(); ctx.arc(cx, cy-2, 13, Math.PI, 0); ctx.fillStyle = color; ctx.fill();
+          ctx.closePath();
+          ctx.fillStyle = color; ctx.beginPath(); ctx.arc(cx, cy+4, 10, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          // 水波
+          for (let w=0; w<2; w++) {
+            ctx.beginPath(); ctx.arc(cx, cy+8+w*4, 6-w*2, 0, Math.PI);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth=1.5; ctx.stroke();
+          }
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 3, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 3, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx-4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+4, cy-2, 1.5, 0, Math.PI*2); ctx.fill();
+        } else {
+          // 默认圆形
+          ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2);
+          ctx.fillStyle = color; ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        }
+      };
       const angle = p.dir * Math.PI/2;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle)*18, cy + Math.sin(angle)*18);
-      ctx.lineTo(cx + Math.cos(angle+2.5)*11, cy + Math.sin(angle+2.5)*11);
-      ctx.lineTo(cx + Math.cos(angle-2.5)*11, cy + Math.sin(angle-2.5)*11);
-      ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
+      drawPet(p.id, p.color);
       // 加速拖尾
       if (p.boosted) {
         for (let i=0; i<2; i++) {
