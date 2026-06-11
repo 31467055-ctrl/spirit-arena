@@ -257,6 +257,7 @@ class Pet {
     this.stuckCount = 0; // 连续卡住计数器
     this.lastPos = {x:-1, y:-1};
     this.lastAction = '';
+    this.hitFlash = 0; // 受击闪烁帧数
   }
   get shielded() { return this.shieldF > 0; }
   get cloaked() { return this.cloakF > 0; }
@@ -401,6 +402,7 @@ class Engine {
     // 2. AI决策（每AI_THINK_INTERVAL帧一次）
     for (const p of this.pets) {
       if (!p.alive) continue;
+      if (p.hitFlash > 0) p.hitFlash--;
       p.aiCooldown--;
       if (p.aiCooldown <= 0) {
         p.aiCooldown = AI_THINK_INTERVAL;
@@ -477,11 +479,11 @@ class Engine {
               continue;
             }
             if (p.shielded) {
-              b.alive = false; p.shieldF = 0;
+              b.alive = false; p.shieldF = 0; p.hitFlash = 8;
               this.log('action', `🛡 ${p.name} 护盾挡住了攻击！`);
             } else {
-              // 击杀制：击倒对方，计数+1，原地复活
               b.alive = false;
+              p.hitFlash = 12;
               const attacker = this.pets.find(o=>o.id===b.owner);
               if (attacker) {
                 attacker.kills++;
@@ -866,6 +868,17 @@ class Engine {
         }
       };
       const angle = p.dir * Math.PI/2;
+      // 受击闪烁
+      if (p.hitFlash > 0) {
+        ctx.save();
+        if (p.hitFlash % 4 < 2) ctx.globalAlpha = 0.3;
+        // 红色闪圈
+        ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI*2);
+        ctx.strokeStyle = '#FF4B4B'; ctx.lineWidth = 3;
+        ctx.shadowColor = '#FF4B4B'; ctx.shadowBlur = 20;
+        ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.restore();
+      }
       drawPet(p.id, p.color);
       // 加速拖尾
       if (p.boosted) {
