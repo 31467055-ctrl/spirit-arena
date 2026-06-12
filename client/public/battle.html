@@ -70,6 +70,7 @@ canvas {
 .btn-danger { background: #FF4B4B; color: #fff; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* 日志 */
 .log-area {
   margin-top: 12px; background: #1a1a2e; border-radius: 10px; padding: 8px 12px;
   max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.5;
@@ -79,6 +80,22 @@ canvas {
 .log-area .log-action { color: #4ECDC4; }
 .log-area .log-speak { color: #FFD93D; }
 .log-area .log-info { color: #666; }
+
+.btn-sm {
+  width: 22px; height: 22px; border: none; border-radius: 4px;
+  background: #4B4B6E; color: #fff; font-size: 14px; cursor: pointer;
+  vertical-align: middle; line-height: 22px;
+}
+.btn-sm:active { background: #333; }
+.btn-sm:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.btn-sm-skill {
+  padding: 3px 8px; border: 1px solid #555; border-radius: 6px;
+  background: #1e1e38; color: #aaa; font-size: 10px; cursor: pointer;
+}
+.btn-sm-skill.active { border-color: #58CC02; color: #58CC02; background: rgba(88,204,2,0.1); }
+
+#setupPanel .stat-row { padding: 2px 0; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -90,36 +107,67 @@ canvas {
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
     <div class="sidebar">
-      <!-- 精灵状态 -->
-      <div class="panel" id="pet0Card">
-        <h3>🔴 小火龙</h3>
-        <div style="font-size:28px; text-align:center;" id="pet0Score">💀 0</div>
-        <div id="pet0Status" class="info-text">状态：正常</div>
-      </div>
-      <div class="panel" id="pet1Card">
-        <h3>🔵 水灵灵</h3>
-        <div style="font-size:28px; text-align:center;" id="pet1Score">💀 0</div>
-        <div id="pet1Status" class="info-text">状态：正常</div>
+      <!-- 配置面板 -->
+      <div class="panel" id="setupPanel">
+        <h3>⚙️ 精灵配置</h3>
+        
+        <!-- 属性点 -->
+        <div style="margin-bottom:8px;">
+          <div class="stat-row"><span>属性点剩余</span><span class="val" id="statPoints">15</span></div>
+          <div class="stat-row">
+            <span>⚔️ 攻击</span>
+            <div><button class="btn-sm" onclick="adjStat('atk',-1)">−</button><span class="val" id="statAtk" style="margin:0 6px">3</span><button class="btn-sm" onclick="adjStat('atk',1)">+</button></div>
+          </div>
+          <div class="stat-row">
+            <span>🛡 防御</span>
+            <div><button class="btn-sm" onclick="adjStat('def',-1)">−</button><span class="val" id="statDef" style="margin:0 6px">3</span><button class="btn-sm" onclick="adjStat('def',1)">+</button></div>
+          </div>
+          <div class="stat-row">
+            <span>💨 速度</span>
+            <div><button class="btn-sm" onclick="adjStat('spd',-1)">−</button><span class="val" id="statSpd" style="margin:0 6px">3</span><button class="btn-sm" onclick="adjStat('spd',1)">+</button></div>
+          </div>
+          <div class="stat-row">
+            <span>❤️ 血量</span>
+            <div><button class="btn-sm" onclick="adjStat('hp',-1)">−</button><span class="val" id="statHp" style="margin:0 6px">6</span><button class="btn-sm" onclick="adjStat('hp',1)">+</button></div>
+          </div>
+        </div>
+
+        <!-- 水晶 -->
+        <div style="margin-bottom:8px;">
+          <div class="stat-row"><span>水晶剩余</span><span class="val" id="crystalPoints">10</span></div>
+          <div class="stat-row"><span>🔥 火</span><div><button class="btn-sm" onclick="adjCrystal('fire',-1)">−</button><span class="val" id="crystalFire" style="margin:0 6px">5</span><button class="btn-sm" onclick="adjCrystal('fire',1)">+</button></div></div>
+          <div class="stat-row"><span>🌊 水</span><div><button class="btn-sm" onclick="adjCrystal('water',-1)">−</button><span class="val" id="crystalWater" style="margin:0 6px">5</span><button class="btn-sm" onclick="adjCrystal('water',1)">+</button></div></div>
+          <div class="stat-row"><span>🌪️ 风</span><div><button class="btn-sm" onclick="adjCrystal('wind',-1)">−</button><span class="val" id="crystalWind" style="margin:0 6px">0</span><button class="btn-sm" onclick="adjCrystal('wind',1)">+</button></div></div>
+          <div class="stat-row"><span>⛰️ 地</span><div><button class="btn-sm" onclick="adjCrystal('earth',-1)">−</button><span class="val" id="crystalEarth" style="margin:0 6px">0</span><button class="btn-sm" onclick="adjCrystal('earth',1)">+</button></div></div>
+        </div>
+
+        <!-- 技能 -->
+        <div style="margin-bottom:6px;">
+          <div class="stat-row"><span>技能</span><span class="val" id="skillName">治疗波</span></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+            <button class="btn-sm-skill" data-skill="heal" onclick="selectSkill('heal')">💚 治疗波</button>
+            <button class="btn-sm-skill" data-skill="blink" onclick="selectSkill('blink')">⚡ 闪现</button>
+            <button class="btn-sm-skill" data-skill="rage" onclick="selectSkill('rage')">🔥 狂暴</button>
+            <button class="btn-sm-skill" data-skill="thorn" onclick="selectSkill('thorn')">🌵 荆棘甲</button>
+            <button class="btn-sm-skill" data-skill="sense" onclick="selectSkill('sense')">👁️ 侦查</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:6px;" onclick="document.getElementById('btnStart').click()">⚔️ 开始对战</button>
       </div>
 
-      <!-- 战况 -->
-      <div class="panel">
-        <h3>⚔️ 战况</h3>
+      <!-- 精灵状态（对战开始后显示） -->
+      <div class="panel" id="battlePanel" style="display:none;">
+        <h3>⚔️ 对战</h3>
+        <div class="pet-card"><div class="dot" style="background:#FF6B6B"></div><div class="info"><div class="name" id="bp0Name">小火龙</div><div class="score" id="bp0Score">💀 0</div></div><span class="status-tag" id="bp0Status">正常</span></div>
+        <div class="pet-card"><div class="dot" style="background:#4ECDC4"></div><div class="info"><div class="name" id="bp1Name">水灵灵</div><div class="score" id="bp1Score">💀 0</div></div><span class="status-tag" id="bp1Status">正常</span></div>
         <div class="stat-row"><span>帧数</span><span class="val" id="frameCount">0</span></div>
         <div class="stat-row"><span>用时</span><span class="val" id="timer">0.0s</span></div>
-        <div class="stat-row" id="winnerRow" style="display:none;">
-          <span>🏆 胜者</span><span class="val" id="winnerText" style="color:#FFD93D;"></span>
-        </div>
-      </div>
-
-      <!-- 控制 -->
-      <div class="panel">
-        <div class="controls">
+        <div class="stat-row" id="winnerRow" style="display:none;"><span>🏆 胜者</span><span class="val" id="winnerText" style="color:#FFD93D;"></span></div>
+        <div class="controls" style="margin-top:6px;">
           <button class="btn btn-primary" id="btnStart">▶ 开始</button>
           <button class="btn btn-secondary" id="btnPause" disabled>⏸ 暂停</button>
           <button class="btn btn-danger" id="btnReset">⟳ 重置</button>
         </div>
-        <div class="info-text" style="margin-top:6px;">⚔️ 先到3杀获胜 · 45秒限时</div>
       </div>
     </div>
   </div>
@@ -130,6 +178,59 @@ canvas {
 </div>
 
 <script>
+// ===== 精灵配置 =====
+const CONFIG = {
+  stats: { atk: 3, def: 3, spd: 3, hp: 6 },
+  crystals: { fire: 5, water: 5, wind: 0, earth: 0 },
+  skill: 'heal',
+  totalStatPoints: 15,
+  totalCrystalPoints: 10,
+};
+
+function byId(id) { return document.getElementById(id); }
+
+function adjStat(key, delta) {
+  const s = CONFIG.stats;
+  const used = s.atk + s.def + s.spd + s.hp;
+  const remain = CONFIG.totalStatPoints - used;
+  if (delta > 0 && remain <= 0) return;
+  if (delta < 0 && s[key] <= 1) return;
+  s[key] += delta;
+  updateDisplay();
+}
+
+function adjCrystal(key, delta) {
+  const c = CONFIG.crystals;
+  const used = c.fire + c.water + c.wind + c.earth;
+  const remain = CONFIG.totalCrystalPoints - used;
+  if (delta > 0 && remain <= 0) return;
+  if (delta < 0 && c[key] <= 0) return;
+  c[key] += delta;
+  updateDisplay();
+}
+
+function selectSkill(name) {
+  CONFIG.skill = name;
+  document.querySelectorAll('.btn-sm-skill').forEach(b => b.classList.toggle('active', b.dataset.skill === name));
+  byId('skillName').textContent = document.querySelector(`.btn-sm-skill[data-skill="${name}"]`).textContent.trim();
+}
+
+function updateDisplay() {
+  const s = CONFIG.stats, c = CONFIG.crystals;
+  const used = s.atk + s.def + s.spd + s.hp;
+  byId('statPoints').textContent = CONFIG.totalStatPoints - used;
+  byId('statAtk').textContent = s.atk;
+  byId('statDef').textContent = s.def;
+  byId('statSpd').textContent = s.spd;
+  byId('statHp').textContent = s.hp;
+  const cu = c.fire + c.water + c.wind + c.earth;
+  byId('crystalPoints').textContent = CONFIG.totalCrystalPoints - cu;
+  byId('crystalFire').textContent = c.fire;
+  byId('crystalWater').textContent = c.water;
+  byId('crystalWind').textContent = c.wind;
+  byId('crystalEarth').textContent = c.earth;
+}
+
 // ===== 配置 =====
 const COLS = 10, ROWS = 10, CELL = 40;
 const TARGET_FPS = 10;             // 目标帧率（10fps，肉眼清晰可见）
@@ -240,13 +341,20 @@ function turnDir(currentDir, targetDir) {
 
 // ===== 精灵 =====
 class Pet {
-  constructor(id, name, color, x, y, dir) {
+  constructor(id, name, color, x, y, dir, config) {
     this.id = id; this.name = name; this.color = color;
     this.x = x; this.y = y; this.dir = dir;
     this.stars = 0; this.alive = true;
-    this.kills = 0;                // 击杀数
-    this.hp = 100;                 // 当前血量
-    this.maxHp = 100;              // 最大血量
+    this.kills = 0;
+    // 属性配置
+    const cfg = config || { stats: { atk: 3, def: 3, spd: 3, hp: 6 }, crystals: { fire: 5, water: 5, wind: 0, earth: 0 }, skill: 'heal' };
+    this.atk = cfg.stats.atk;
+    this.def = cfg.stats.def;
+    this.spd = cfg.stats.spd;
+    this.maxHp = 60 + cfg.stats.hp * 10;
+    this.hp = this.maxHp;
+    this.crystals = cfg.crystals;
+    this.skill = cfg.skill;
     this.bullet = null;
     // buff
     this.shieldF = 0;
@@ -298,13 +406,21 @@ class Engine {
     this.timer = byId('timer');
     this.winnerRow = byId('winnerRow');
     this.winnerText = byId('winnerText');
+    this.setupPanel = byId('setupPanel');
+    this.battlePanel = byId('battlePanel');
 
     this.btnSt.onclick = () => this.start();
     this.btnPa.onclick = () => this.togglePause();
-    this.btnRe.onclick = () => this.reset();
+    this.btnRe.onclick = () => {
+      this.setupPanel.style.display = '';
+      this.battlePanel.style.display = 'none';
+      this.reset();
+    };
 
-    this.reset();
-    this.draw();
+    // 初始显示配置面板，隐藏战斗面板
+    this.setupPanel.style.display = '';
+    this.battlePanel.style.display = 'none';
+    this.logEl.innerHTML = '<div class="log-info">🟢 配置你的精灵，然后点击"开始"</div>';
   }
 
   getRandomPosition(exclude) {
@@ -361,7 +477,14 @@ class Engine {
 
   start() {
     if (this.running) return;
+    // 隐藏配置面板，显示战斗面板
+    this.setupPanel.style.display = 'none';
+    this.battlePanel.style.display = '';
     this.reset();
+    // 用CONFIG覆盖精灵属性
+    const cfg = CONFIG;
+    this.pets[0] = new Pet(0, '小火龙', '#FF6B6B', this.pets[0].x, this.pets[0].y, this.pets[0].dir, cfg);
+    this.pets[1] = new Pet(1, '水灵灵', '#4ECDC4', this.pets[1].x, this.pets[1].y, this.pets[1].dir, cfg);
     this.running = true; this.paused = false;
     this.startTime = performance.now();
     this.btnSt.disabled = true; this.btnPa.disabled = false;
@@ -486,13 +609,24 @@ class Engine {
             } else {
               b.alive = false;
               p.hitFlash = 12;
-              // 扣血
-              const dmg = 25;
+              // 扣血（受攻击/防御/水晶克制影响）
+              const attacker = this.pets.find(o=>o.id===b.owner);
+              if (!attacker) continue;
+              const baseDmg = 15 + attacker.atk * 3;
+              const defReduce = p.def * 2;
+              // 水晶克制
+              const order = ['fire', 'water', 'wind', 'earth'];
+              let atkCrystal = '', defCrystal = '';
+              for (const k of order) { if (attacker.crystals[k] > 0) atkCrystal = k; if (p.crystals[k] > 0) defCrystal = k; break; }
+              const atkIdx = order.indexOf(atkCrystal), defIdx = order.indexOf(defCrystal);
+              const advantage = (atkIdx + 1) % 4 === defIdx ? 1.5 : (defIdx + 1) % 4 === atkIdx ? 0.67 : 1;
+              let dmg = Math.floor(baseDmg * advantage - defReduce);
+              dmg = Math.max(5, dmg);
               p.hp = Math.max(0, p.hp - dmg);
-              this.log('action', `💥 ${p.name} 被击中！HP: ${p.hp}/${p.maxHp}`);
+              p.hitFlash = 12;
+              this.log('action', `💥 ${p.name} 被击中！-${dmg}HP (${p.hp}/${p.maxHp})` + (advantage > 1 ? ' 克制！' : advantage < 1 ? ' 被克制...' : ''));
               if (p.hp <= 0) {
                 // HP归零算击杀
-                const attacker = this.pets.find(o=>o.id===b.owner);
                 if (attacker) {
                   attacker.kills++;
                   this.log('win', `💀 ${attacker.name} 击倒了 ${p.name}！(${attacker.kills}/${KILL_LIMIT})`);
@@ -927,12 +1061,14 @@ class Engine {
   updateUI() {
     for (let i=0; i<2; i++) {
       const p = this.pets[i];
-      byId(`pet${i}Score`).textContent = `💀 ${p.kills}`;
+      const scEl = byId(`bp${i}Score`);
+      const stEl = byId(`bp${i}Status`);
+      if (scEl) scEl.textContent = `💀 ${p.kills}`;
       let st = [];
       if (p.shielded) st.push('🛡护盾');
       if (p.cloaked) st.push('👻隐身');
       if (p.boosted) st.push('💨加速');
-      byId(`pet${i}Status`).textContent = '状态：' + (st.length ? st.join(' ') : '正常');
+      if (stEl) stEl.textContent = '状态：' + (st.length ? st.join(' ') : '正常');
     }
     this.frameCount.textContent = this.frame;
   }
@@ -946,8 +1082,6 @@ class Engine {
     while (this.logEl.children.length > 50) this.logEl.removeChild(this.logEl.firstChild);
   }
 }
-
-function byId(id) { return document.getElementById(id); }
 
 window.addEventListener('DOMContentLoaded', () => { engine = new Engine(); });
 </script>
