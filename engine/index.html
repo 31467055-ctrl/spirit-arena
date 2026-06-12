@@ -245,6 +245,8 @@ class Pet {
     this.x = x; this.y = y; this.dir = dir;
     this.stars = 0; this.alive = true;
     this.kills = 0;                // 击杀数
+    this.hp = 100;                 // 当前血量
+    this.maxHp = 100;              // 最大血量
     this.bullet = null;
     // buff
     this.shieldF = 0;
@@ -484,9 +486,15 @@ class Engine {
             } else {
               b.alive = false;
               p.hitFlash = 12;
-              const attacker = this.pets.find(o=>o.id===b.owner);
-              if (attacker) {
-                attacker.kills++;
+              // 扣血
+              const dmg = 25;
+              p.hp = Math.max(0, p.hp - dmg);
+              this.log('action', `💥 ${p.name} 被击中！HP: ${p.hp}/${p.maxHp}`);
+              if (p.hp <= 0) {
+                // HP归零算击杀
+                const attacker = this.pets.find(o=>o.id===b.owner);
+                if (attacker) {
+                  attacker.kills++;
                 this.log('win', `💀 ${attacker.name} 击倒了 ${p.name}！(${attacker.kills}/${KILL_LIMIT})`);
                 // 检查是否达到击杀上限
                 if (attacker.kills >= KILL_LIMIT) {
@@ -504,6 +512,7 @@ class Engine {
               p.cloakF = 0; p.boostF = 0;
               p.aiPath = [];
               p.stuckCount = 0;
+              p.hp = p.maxHp; // 复活回满血
               this.log('action', `✨ ${p.name} 在 (${pos.x},${pos.y}) 复活！`);
             }
             const owner = this.pets.find(o=>o.id===b.owner);
@@ -892,7 +901,17 @@ class Engine {
       ctx.restore();
       // 名字
       ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center'; ctx.fillText(p.name, cx, cy-26);
+      ctx.textAlign = 'center'; ctx.fillText(p.name, cx, cy-28);
+      // 血条
+      const barW = 30, barH = 4;
+      const barX = cx - barW/2, barY = cy + 16;
+      ctx.fillStyle = '#333'; ctx.fillRect(barX, barY, barW, barH);
+      const hpRatio = p.hp / p.maxHp;
+      const hpColor = hpRatio > 0.5 ? '#58CC02' : hpRatio > 0.25 ? '#FFD93D' : '#FF4B4B';
+      ctx.fillStyle = hpColor; ctx.fillRect(barX, barY, barW * hpRatio, barH);
+      // 血量文字
+      ctx.fillStyle = '#fff'; ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(`${p.hp}/${p.maxHp}`, cx, barY + barH + 8);
       // buff标签
       let tags = [];
       if (p.shielded) tags.push('🛡');
