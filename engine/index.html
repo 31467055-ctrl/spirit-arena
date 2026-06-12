@@ -495,25 +495,25 @@ class Engine {
                 const attacker = this.pets.find(o=>o.id===b.owner);
                 if (attacker) {
                   attacker.kills++;
-                this.log('win', `💀 ${attacker.name} 击倒了 ${p.name}！(${attacker.kills}/${KILL_LIMIT})`);
-                // 检查是否达到击杀上限
-                if (attacker.kills >= KILL_LIMIT) {
-                  this.winner = attacker;
-                  this.end();
-                  break;
+                  this.log('win', `💀 ${attacker.name} 击倒了 ${p.name}！(${attacker.kills}/${KILL_LIMIT})`);
+                  if (attacker.kills >= KILL_LIMIT) {
+                    this.winner = attacker;
+                    this.end();
+                    break;
+                  }
                 }
+                // 被击倒者随机复活
+                const pos = this.getRandomPosition([]);
+                p.x = pos.x; p.y = pos.y;
+                p.dir = Math.floor(Math.random()*4);
+                p.bullet = null;
+                p.shieldF = 0; p.shieldCooldown = 0;
+                p.cloakF = 0; p.boostF = 0;
+                p.aiPath = [];
+                p.stuckCount = 0;
+                p.hp = p.maxHp;
+                this.log('action', `✨ ${p.name} 在 (${pos.x},${pos.y}) 复活！`);
               }
-              // 被击倒者随机复活
-              const pos = this.getRandomPosition([]);
-              p.x = pos.x; p.y = pos.y;
-              p.dir = Math.floor(Math.random()*4);
-              p.bullet = null;
-              p.shieldF = 0; p.shieldCooldown = 0;
-              p.cloakF = 0; p.boostF = 0;
-              p.aiPath = [];
-              p.stuckCount = 0;
-              p.hp = p.maxHp; // 复活回满血
-              this.log('action', `✨ ${p.name} 在 (${pos.x},${pos.y}) 复活！`);
             }
             const owner = this.pets.find(o=>o.id===b.owner);
             if (owner) owner.bullet = null;
@@ -949,7 +949,7 @@ class Engine {
 
 function byId(id) { return document.getElementById(id); }
 
-window.onload = () => { engine = new Engine(); };
+window.addEventListener('DOMContentLoaded', () => { engine = new Engine(); });
 </script>
 </body>
 </html>
