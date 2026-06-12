@@ -61,8 +61,8 @@ function MainMenu({ user, onLogout }) {
           ✨ 创建精灵
         </button>
         <button onClick={() => nav('/help')}
-          className="w-full py-2 rounded-lg text-sm"
-          style={{color: '#888'}}>
+          className="w-full py-3 rounded-xl font-bold text-white text-base"
+          style={{background: '#FF9600', boxShadow: '0 5px 0 #cc7800'}}>
           📖 游戏指南
         </button>
         <button onClick={onLogout}
