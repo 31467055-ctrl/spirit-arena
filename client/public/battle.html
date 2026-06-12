@@ -194,7 +194,7 @@ function adjStat(key, delta) {
   const used = s.atk + s.def + s.spd + s.hp;
   const remain = CONFIG.totalStatPoints - used;
   if (delta > 0 && remain <= 0) return;
-  if (delta < 0 && s[key] <= 1) return;
+  if (delta < 0 && s[key] <= 0) return;
   s[key] += delta;
   updateDisplay();
 }
@@ -1083,7 +1083,10 @@ class Engine {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => { engine = new Engine(); });
+window.addEventListener('DOMContentLoaded', () => {
+  updateDisplay();
+  engine = new Engine();
+});
 </script>
 </body>
 </html>
