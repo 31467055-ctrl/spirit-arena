@@ -27,33 +27,33 @@ export default function MatchPage({ API, user }) {
   const totalStatPoints = 15, totalCrystalPoints = 10
 
   const adjStat = (key, delta) => {
-    const s = { ...config.stats }
-    const used = s.atk + s.def + s.spd + s.hp
-    if (delta > 0 && used >= totalStatPoints) return
-    if (delta < 0 && s[key] <= 0) return
-    s[key] += delta
-    setConfig({ ...config, stats: s })
+    setConfig(prev => {
+      const s = { ...prev.stats }
+      const used = s.atk + s.def + s.spd + s.hp
+      if (delta > 0 && used >= totalStatPoints) return prev
+      if (delta < 0 && s[key] <= 0) return prev
+      s[key] += delta
+      return { ...prev, stats: s }
+    })
   }
 
   const adjCrystal = (key, delta) => {
-    const c = { ...config.crystals }
-    const used = c.fire + c.water + c.wind + c.earth
-    if (delta > 0 && used >= totalCrystalPoints) return
-    if (delta < 0 && c[key] <= 0) return
-    // 仅相邻混合
-    if (delta > 0 && c[key] === 0) {
-      const active = ORDER.filter(k => c[k] > 0)
-      if (active.length >= 2) {
-        const idx = ORDER.indexOf(key)
-        const canAdd = active.some(k => {
-          const ki = ORDER.indexOf(k)
-          return (idx + 1) % 4 === ki || (idx + 3) % 4 === ki
-        })
-        if (!canAdd) return
+    setConfig(prev => {
+      const c = { ...prev.crystals }
+      const used = c.fire + c.water + c.wind + c.earth
+      if (delta > 0 && used >= totalCrystalPoints) return prev
+      if (delta < 0 && c[key] <= 0) return prev
+      if (delta > 0 && c[key] === 0) {
+        const active = ORDER.filter(k => c[k] > 0)
+        if (active.length >= 2) {
+          const idx = ORDER.indexOf(key)
+          const canAdd = active.some(k => { const ki = ORDER.indexOf(k); return (idx + 1) % 4 === ki || (idx + 3) % 4 === ki })
+          if (!canAdd) return prev
+        }
       }
-    }
-    c[key] += delta
-    setConfig({ ...config, crystals: c })
+      c[key] += delta
+      return { ...prev, crystals: c }
+    })
   }
 
   const joinMatch = async () => {
