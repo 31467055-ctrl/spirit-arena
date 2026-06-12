@@ -195,7 +195,8 @@ router.post('/battle', (req, res) => {
   }
   const [cId, cName, cCode] = r1[0].values[0];
   const [dId, dName, dCode] = r2[0].values[0];
-  const result = runBattle(cCode, cName, dCode, dName);
+  const config = req.body.config || null;
+  const result = runBattle(cCode, cName, dCode, dName, config);
 
   const matchId = 'match-' + uuid().slice(0, 8);
   let winnerId = null;
@@ -285,7 +286,8 @@ router.post('/match/join', (req, res) => {
 
     const [cId, cName, cCode] = r1[0].values[0];
     const [dId, dName, dCode] = r2[0].values[0];
-    const result = runBattle(cCode, cName, dCode, dName);
+    const config = req.body.config || null;
+    const result = runBattle(cCode, cName, dCode, dName, config);
 
     const matchId = 'match-' + uuid().slice(0, 8);
     let winnerId = null;

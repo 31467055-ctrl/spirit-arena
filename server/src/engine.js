@@ -101,12 +101,24 @@ function turnDir(currentDir, targetDir) {
 
 // ===== 精灵 =====
 class Pet {
-  constructor(id, name, x, y, dir) {
+  constructor(id, name, x, y, dir, config) {
     this.id = id; this.name = name; this.x = x; this.y = y; this.dir = dir;
     this.kills = 0; this.alive = true; this.bullet = null;
     this.shieldF = 0; this.shieldCD = 0; this.boostF = 0; this.cloakF = 0; this.fireLock = 0;
     this.aiCD = 0; this.aiPath = []; this.stuckC = 0;
     this.lastPos = {x:-1, y:-1};
+    this.hitFlash = 0;
+    // 配置
+    const cfg = config || { stats: { atk: 0, def: 0, spd: 0, hp: 0 }, crystals: { fire: 0, water: 0, wind: 0, earth: 0 }, skill: 'heal' };
+    this.atk = cfg.stats.atk;
+    this.def = cfg.stats.def;
+    this.spd = cfg.stats.spd;
+    this.maxHp = 60 + cfg.stats.hp * 10;
+    this.hp = this.maxHp;
+    this.crystals = cfg.crystals;
+    this.skill = cfg.skill;
+    this.skillCD = 0;
+    this.skillActive = 0;
   }
   get shielded() { return this.shieldF > 0; }
 }
@@ -222,7 +234,8 @@ function aiThink(p, enemy, map, star) {
 }
 
 function tryMove(p, map, pets) {
-  const baseSpeed = p.boostF > 0 ? 2 : 1;
+  const spdBonus = Math.floor(p.spd / 4) * 0.5;
+  const baseSpeed = p.boostF > 0 ? 2 + spdBonus : 1 + spdBonus;
   // 河流减速30%
   const onRiver = map[p.y][p.x] === T.RIVER;
   const speed = onRiver ? Math.max(1, Math.floor(baseSpeed * 0.7)) : baseSpeed;
@@ -249,12 +262,12 @@ function tryFire(p, map, bullets) {
 }
 
 // ===== 执行一场对战 =====
-export function runBattle(code1, name1, code2, name2) {
+export function runBattle(code1, name1, code2, name2, config) {
   const map = randomMap();
   const p0pos = randomPos(map, []);
   const p1pos = randomPos(map, [p0pos]);
-  const p0 = new Pet(0, name1 || '精灵A', p0pos.x, p0pos.y, Math.floor(Math.random()*4));
-  const p1 = new Pet(1, name2 || '精灵B', p1pos.x, p1pos.y, Math.floor(Math.random()*4));
+  const p0 = new Pet(0, name1 || '精灵A', p0pos.x, p0pos.y, Math.floor(Math.random()*4), config);
+  const p1 = new Pet(1, name2 || '精灵B', p1pos.x, p1pos.y, Math.floor(Math.random()*4), config);
   const pets = [p0, p1];
   const bullets = [];
   let star = null;
@@ -289,6 +302,9 @@ export function runBattle(code1, name1, code2, name2) {
     // buff
     for (const p of pets) {
       if (!p.alive) continue;
+      if (p.hitFlash > 0) p.hitFlash--;
+      if (p.skillCD > 0) p.skillCD--;
+      if (p.skillActive > 0) p.skillActive--;
       if (p.shieldF > 0) p.shieldF--;
       if (p.shieldCD > 0) p.shieldCD--;
       if (p.boostF > 0) p.boostF--;
@@ -341,25 +357,47 @@ export function runBattle(code1, name1, code2, name2) {
             const inGrass = map[p.y][p.x] === T.GRASS;
             if (inGrass && Math.random() < 0.5) { continue; }
             if (p.shielded) {
-              b.alive = false; p.shieldF = 0;
+              b.alive = false; p.shieldF = 0; p.hitFlash = 8;
             } else {
               b.alive = false;
+              p.hitFlash = 12;
+              // 扣血（属性+水晶克制）
               const attacker = pets.find(o=>o.id===b.owner);
-              if (attacker) {
-                attacker.kills++;
-                events.push({type: 'kill', by: attacker.id, target: p.id, kills: attacker.kills});
-                if (attacker.kills >= KILL_LIMIT) {
-                  winner = attacker;
-                  break;
-                }
+              if (!attacker) continue;
+              const baseDmg = 15 + attacker.atk * 3;
+              const defReduce = p.def * 2;
+              const order = ['fire', 'water', 'wind', 'earth'];
+              let atkC = '', defC = '';
+              for (const k of order) { if (attacker.crystals[k] > 0) atkC = k; if (p.crystals[k] > 0) defC = k; break; }
+              const atkI = order.indexOf(atkC), defI = order.indexOf(defC);
+              const advantage = (atkI+1)%4 === defI ? 1.5 : (defI+1)%4 === atkI ? 0.67 : 1;
+              let dmg = Math.floor(baseDmg * advantage - defReduce);
+              dmg = Math.max(5, dmg);
+              p.hp = Math.max(0, p.hp - dmg);
+              // 荆棘甲反伤
+              if (p.skill === 'thorn' && dmg > 0 && attacker) {
+                attacker.hp = Math.max(0, attacker.hp - Math.floor(dmg * 0.3));
               }
-              // 复活
-              const pos = randomPos(map, []);
-              p.x = pos.x; p.y = pos.y;
-              p.dir = Math.floor(Math.random()*4);
-              p.bullet = null; p.shieldF = 0; p.shieldCD = 0;
-              p.aiPath = []; p.stuckC = 0;
-              events.push({type: 'revive', petId: p.id, x: pos.x, y: pos.y});
+              events.push({type: 'hit', target: p.id, dmg, advantage: advantage > 1 ? 'weak' : advantage < 1 ? 'resist' : 'normal'});
+              if (p.hp <= 0) {
+                // HP归零算击杀
+                if (attacker) {
+                  attacker.kills++;
+                  events.push({type: 'kill', by: attacker.id, target: p.id, kills: attacker.kills});
+                  if (attacker.kills >= KILL_LIMIT) {
+                    winner = attacker;
+                    break;
+                  }
+                }
+                // 复活
+                const pos = randomPos(map, []);
+                p.x = pos.x; p.y = pos.y;
+                p.dir = Math.floor(Math.random()*4);
+                p.bullet = null; p.shieldF = 0; p.shieldCD = 0;
+                p.cloakF = 0; p.boostF = 0;
+                p.aiPath = []; p.stuckC = 0;
+                p.hp = p.maxHp;
+              }
             }
             const owner = pets.find(o=>o.id===b.owner);
             if (owner) owner.bullet = null;
