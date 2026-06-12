@@ -205,6 +205,21 @@ function adjCrystal(key, delta) {
   const remain = CONFIG.totalCrystalPoints - used;
   if (delta > 0 && remain <= 0) return;
   if (delta < 0 && c[key] <= 0) return;
+  // 只允许相邻混合：火-水-风-地-火 形成环
+  const order = ['fire', 'water', 'wind', 'earth'];
+  const idx = order.indexOf(key);
+  if (delta > 0 && c[key] === 0) {
+    // 检查是否已有两种不同的非零水晶
+    const active = order.filter(k => c[k] > 0);
+    if (active.length >= 2) {
+      // 检查新增的水晶是否与已有水晶相邻
+      const canAdd = active.some(k => {
+        const ki = order.indexOf(k);
+        return (idx + 1) % 4 === ki || (idx + 3) % 4 === ki;
+      });
+      if (!canAdd) return;
+    }
+  }
   c[key] += delta;
   updateDisplay();
 }
@@ -364,10 +379,14 @@ class Pet {
     // AI
     this.aiCooldown = 0;
     this.aiPath = [];
-    this.stuckCount = 0; // 连续卡住计数器
+    this.stuckCount = 0;
     this.lastPos = {x:-1, y:-1};
     this.lastAction = '';
-    this.hitFlash = 0; // 受击闪烁帧数
+    this.hitFlash = 0;
+    // 技能
+    this.skillCD = 0;
+    this.skillActive = 0; // 技能持续
+    this.thornDmg = 0;    // 荆棘甲反伤
   }
   get shielded() { return this.shieldF > 0; }
   get cloaked() { return this.cloakF > 0; }
@@ -513,10 +532,12 @@ class Engine {
 
   tick() {
     if (this.over) return;
-
-    // 1. buff计时
+    // 1. buff + 技能更新
     for (const p of this.pets) {
       if (!p.alive) continue;
+      if (p.hitFlash > 0) p.hitFlash--;
+      if (p.skillCD > 0) p.skillCD--;
+      if (p.skillActive > 0) p.skillActive--;
       if (p.shieldF > 0) p.shieldF--;
       if (p.shieldCooldown > 0) p.shieldCooldown--;
       if (p.cloakF > 0) p.cloakF--;
@@ -624,6 +645,14 @@ class Engine {
               dmg = Math.max(5, dmg);
               p.hp = Math.max(0, p.hp - dmg);
               p.hitFlash = 12;
+              // 荆棘甲反伤
+              if (p.skill === 'thorn' && dmg > 0) {
+                const thornDmg = Math.floor(dmg * 0.3);
+                if (attacker) {
+                  attacker.hp = Math.max(0, attacker.hp - thornDmg);
+                  this.log('action', `🌵 荆棘甲反伤 ${attacker.name} -${thornDmg}HP！`);
+                }
+              }
               this.log('action', `💥 ${p.name} 被击中！-${dmg}HP (${p.hp}/${p.maxHp})` + (advantage > 1 ? ' 克制！' : advantage < 1 ? ' 被克制...' : ''));
               if (p.hp <= 0) {
                 // HP归零算击杀
@@ -695,7 +724,35 @@ class Engine {
     const commands = [];
     const push = (type, data) => commands.push({type, ...data});
 
-    // 确定目标：有星尘优先抢星，没星尘再追敌
+    // 技能使用
+    if (p.skillCD <= 0 && p.skillActive <= 0) {
+      const dist = Math.abs(p.x - enemy.x) + Math.abs(p.y - enemy.y);
+      if (p.skill === 'heal' && p.hp < p.maxHp * 0.6) {
+        p.hp = Math.min(p.maxHp, p.hp + 30);
+        p.skillCD = 60;
+        p.skillActive = 5;
+        this.log('action', `💚 ${p.name} 使用了治疗波！+30HP`);
+      } else if (p.skill === 'blink' && dist < 4 && enemyVisible) {
+        // 闪现到敌人背后
+        const bd = (enemy.dir + 2) % 4;
+        const bx = enemy.x + D.dx[bd], by = enemy.y + D.dy[bd];
+        if (bx >= 0 && bx < COLS && by >= 0 && by < ROWS && m[by][bx] !== T.WALL && !this.pets.some(o=>o.id!==p.id && o.alive && o.x===bx && o.y===by)) {
+          p.x = bx; p.y = by; p.dir = enemy.dir;
+          p.skillCD = 40;
+          this.log('action', `⚡ ${p.name} 闪现到敌人背后！`);
+        }
+      } else if (p.skill === 'rage' && enemyVisible && dist < 6) {
+        p.atk += 5; p.def = Math.max(0, p.def - 2);
+        p.skillCD = 80; p.skillActive = 30;
+        this.log('action', `🔥 ${p.name} 进入狂暴！攻击+5 防御-2`);
+      } else if (p.skill === 'sense') {
+        // 永久看到敌人，不用施法动作
+        p.skillCD = 200;
+        p.skillActive = 1;
+      }
+    }
+
+    // 确定目标
     let target = null;
     if (this.star) {
       target = {x: this.star.x, y: this.star.y};
@@ -793,7 +850,9 @@ class Engine {
   }
 
   tryMove(p) {
-    const baseSpeed = p.boosted ? 2 : 1;
+    // 基础速度1，每2点速度属性+0.5步（最多+1.5）
+    const spdBonus = Math.floor(p.spd / 4) * 0.5;
+    const baseSpeed = p.boosted ? 2 + spdBonus : 1 + spdBonus;
     // 河流减速30%
     const onRiver = this.map[p.y][p.x] === T.RIVER;
     const speed = onRiver ? Math.max(1, Math.floor(baseSpeed * 0.7)) : baseSpeed;
